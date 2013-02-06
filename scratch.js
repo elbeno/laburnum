@@ -43,6 +43,7 @@ $.fn.scrollToEnd = function() {
 var welcomeMessage = 'Welcome!\n';
 var expressionIndex = 0;
 var globalEnv = new Environment();
+InstallBuiltins(globalEnv);
 
 // Display a prompt and optional msg
 function displayPrompt(target, msg)
@@ -136,5 +137,6 @@ $(function() {
       }
     }
 
+    return true;
   });
 });

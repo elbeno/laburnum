@@ -2,8 +2,6 @@
 function Environment() {
   this.variables = {};
   this.functions = {};
-
-  InstallBuiltins(this);
 }
 
 //------------------------------------------------------------------------------
@@ -28,11 +26,11 @@ Environment.prototype.lookupVariable = function(name) {
 //------------------------------------------------------------------------------
 // we can bind functions and variables
 
-Environment.prototype.bindFunction = function(name, arity, body) {
-  this.functions[name] = { "arity":arity, "body":body };
+Environment.prototype.bindFunction = function(name, arglist, body) {
+  this.functions[name] = { 'arglist':arglist, 'body':body };
 };
 
-Environment.prototype.lookupVariable = function(name, value) {
+Environment.prototype.bindVariable = function(name, value) {
   this.variables[name] = value;
 };
 
@@ -42,7 +40,7 @@ Environment.prototype.lookupVariable = function(name, value) {
 Environment.prototype.arity = function(name) {
   var f = this.functions[name];
   if (f != undefined)
-    return f.arity;
+    return f.arglist.length;
 
   throw "Function " + name + " is undefined.";
 };

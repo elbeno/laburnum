@@ -17,7 +17,9 @@ token_ns.Enum = {
   WORD:5,
   NUMBER:6,
   LEFT_PAREN:7,
-  RIGHT_PAREN:8
+  RIGHT_PAREN:8,
+  FORM:9,
+  END:10
 };
 
 function Token(type, lexeme) {
@@ -31,7 +33,8 @@ Token.prototype.toString = function() {
 
 //------------------------------------------------------------------------------
 function Tokenizer(input) {
-  this.input = input;
+  // add a space to ease end-of-input detection
+  this.input = input + ' ';
 
   // a token queue is used for macro expansions, eg. : -> THING QUOTE
   this.tokenqueue = [];
@@ -46,13 +49,13 @@ Tokenizer.prototype.matchToken = function(s) {
     // dots
     this.input = s.substring(1);
     this.tokenqueue.push(new Token(token_ns.Enum.WORD, 'THING'));
-    this.tokenqueue.push(new Token(token_ns.Enum.WORD, 'QUOTE'));
+    this.tokenqueue.push(new Token(token_ns.Enum.FORM, 'QUOTE'));
     break;
 
   case '"':
     // quotes
     this.input = s.substring(1);
-    this.tokenqueue.push(new Token(token_ns.Enum.WORD, 'QUOTE'));
+    this.tokenqueue.push(new Token(token_ns.Enum.FORM, 'QUOTE'));
     break;
 
   case '(':
@@ -109,6 +112,20 @@ Tokenizer.prototype.matchToken = function(s) {
     break;
 
   default:
+    // TO special form
+    if (s.substring(0, 3) == 'TO ') {
+      this.input = s.substring(3);
+      this.tokenqueue.push(new Token(token_ns.Enum.FORM, 'TO'));
+      break;
+    }
+
+    // END special form
+    if (s.substring(0, 4) == 'END ') {
+      this.input = s.substring(4);
+      this.tokenqueue.push(new Token(token_ns.Enum.END, 'END'));
+      break;
+    }
+
     // numbers
     var numberRE = /^[0-9]+/;
     result = s.match(numberRE);
@@ -162,4 +179,5 @@ Tokenizer.prototype.expect = function(type) {
   if (t.type != type) {
     throw "Expecting a " + type + ", found a " + t.type;
   }
+  return t;
 };

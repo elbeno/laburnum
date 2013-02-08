@@ -1,7 +1,10 @@
 //------------------------------------------------------------------------------
 function parse(input, env) {
 
-  var tokenizer = new Tokenizer(input);
+  // make the input all one line without the continuation prompt
+  var s = input.replace(/\n>/g, ' ');
+
+  var tokenizer = new Tokenizer(s);
   return parseRelop(tokenizer, env);
 }
 
@@ -76,13 +79,13 @@ function parseExpr(tokenizer, env) {
     // parenthesised expression
     tokenizer.consume();
     var expr = parseRelop(tokenizer, env);
-    tokenizer.expect(token_ns.Enum.RIGHT_PAREN);
+    tokenizer.expectLexeme(')', 'Expecting a close paren');
     return expr;
 
   case token_ns.Enum.LEFT_SQUARE_BRACKET:
     // list expression
     tokenizer.consume();
-    var l = parseList(tokenizer, env, token_ns.Enum.RIGHT_SQUARE_BRACKET);
+    var l = parseList(tokenizer, env, ']');
     return l;
 
   case token_ns.Enum.NUMBER:
@@ -90,8 +93,23 @@ function parseExpr(tokenizer, env) {
     tokenizer.consume();
     return new Numeric(parseInt(t.lexeme));
 
+  case token_ns.Enum.BOOL:
+    // plain boolean value
+    tokenizer.consume();
+    return new Bool(t.lexeme === 'TRUE');
+
+  case token_ns.Enum.COLON:
+    // : -> THING QUOTE
+    tokenizer.consume();
+    return new Func('THING', [new Func ('QUOTE', [parseExpr(tokenizer, env)])]);
+
+  case token_ns.Enum.QUOTE:
+    // " -> QUOTE
+    tokenizer.consume();
+    return new Func ('QUOTE', [parseExpr(tokenizer, env)]);
+
   case token_ns.Enum.WORD:
-    // a word that must be a function, so find the arity and parse that many
+    // a word must be a function, so find the arity and parse that many
     // arguments
     tokenizer.consume();
     var arity = env.arity(t.lexeme);
@@ -101,71 +119,58 @@ function parseExpr(tokenizer, env) {
     }
     return new Func(t.lexeme, arguments);
 
-  case token_ns.Enum.FORM:
-    // a special form is parsed according to its own rules
+  case token_ns.Enum.TO:
     tokenizer.consume();
-    switch (t.lexeme) {
-    case 'QUOTE':
-      return parseQuote(tokenizer, env);
-
-    case 'TO':
-      return parseTo(tokenizer, env);
-    }
+    return parseTo(tokenizer, env);
 
   }
 
-  throw 'Bad parse.';
+  return undefined;
 }
 
 //------------------------------------------------------------------------------
 function parseList(tokenizer, env, end) {
   var exprs = [];
   var t = tokenizer.peek();
-  while (t != undefined && t.type != end) {
+  while (t != undefined && t.lexeme != end) {
     exprs.push(parseRelop(tokenizer, env));
     t = tokenizer.peek();
   }
-  tokenizer.expect(end);
-  return new List(exprs);
-}
 
-//------------------------------------------------------------------------------
-function parseQuote(tokenizer, env) {
-  var t = tokenizer.peek();
-
-  switch (t.type) {
-  case token_ns.Enum.NUMBER:
-    tokenizer.consume();
-    return new Numeric(parseInt(t.lexeme));
-
-  case token_ns.Enum.WORD:
-    tokenizer.consume();
-    return new Word(t.lexeme);
-
-  default:
-    throw 'Quote expected a word or a number.';
+  // unfinished parse
+  if (t == undefined) {
+    return undefined;
   }
+
+  tokenizer.expectLexeme(end, 'Expecting ' + end);
+  return new List(exprs);
 }
 
 //------------------------------------------------------------------------------
 function parseTo(tokenizer, env) {
   // name of the procedure
-  var name = tokenizer.expect(token_ns.Enum.WORD).lexeme;
+  var name = tokenizer.expectType(
+    token_ns.Enum.WORD,
+    'Expecting a function name after TO').lexeme;
 
   // collect argument names
   var args = [];
   var t = tokenizer.peek();
   while (t != undefined && t.type == token_ns.Enum.COLON) {
     tokenizer.consume();
-    args.push(tokenizer.expect(token_ns.Enum.WORD).lexeme);
+    args.push(tokenizer.expectType(
+      token_ns.Enum.WORD,
+      'Expecting function argument after :').lexeme);
     t = tokenizer.peek();
   }
 
   // parse a list of commands, ending with END
-  var body = parseList(tokenizer, env, token_ns.Enum.END);
+  var body = parseList(tokenizer, env, 'END');
 
-  // create a new function
-  env.bindFunction(name, args, function(env) { return body.eval(env); });
+  // unfinished parse
+  if (body == undefined) {
+    return undefined;
+  }
 
-  return new Numeric(0);
+  return new ToForm(name, args, body);
 }

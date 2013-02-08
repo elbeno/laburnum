@@ -113,18 +113,26 @@ $(function() {
         var expression = parse(input, globalEnv);
 
         if (expression != undefined) {
-          // Evaluate it.
-          var output = expression.eval(globalEnv);
 
-          // And print the result.
-          $(this).val($(this).val() + '\n' + output + '\n');
+          // We are going to evaluate the expression. Add a line break in cae
+          // evaluation results in printing.
+          $(this).val($(this).val() + '\n');
+
+          // Evaluate it.
+          var output = expression.eval(globalEnv).toString();
+
+          // Print the result, if any.
+          if (output != '') {
+            $(this).val($(this).val() + output + '\n');
+          }
 
           // Now make a new prompt.
           displayPrompt($(this));
           return false;
         }
         else {
-          $(this).val($(this).val() + '\n' + input + '\n');
+          $(this).val($(this).val() + '\n>');
+          $(this).scrollToEnd();
           return false;
         }
 

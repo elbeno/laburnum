@@ -1,14 +1,14 @@
 //------------------------------------------------------------------------------
 function Expression() {}
 
-// We can't evaluate an abstract expression
+// An abstract expression has no evaluation.
 Expression.prototype.eval = function(environment) {
-  throw "Attempt to evaluate an abstract expression.";
+  return this;
 };
 
-// But we can't evaluate an abstract expression
+// And prints nothing.
 Expression.prototype.toString = function() {
-  throw "Attempt to print an abstract expression.";
+  return '';
 };
 
 //------------------------------------------------------------------------------
@@ -17,6 +17,7 @@ Word.prototype = new Expression();
 Word.prototype.constructor = Word;
 
 function Word(name) {
+  this.type = 'word';
   this.name = name;
 }
 
@@ -36,6 +37,7 @@ Numeric.prototype = new Expression();
 Numeric.prototype.constructor = Numeric;
 
 function Numeric(value) {
+  this.type = 'numeric';
   this.value = value;
 }
 
@@ -50,11 +52,32 @@ Numeric.prototype.toString = function() {
 };
 
 //------------------------------------------------------------------------------
+// A boolean value is an expression
+Bool.prototype = new Expression();
+Bool.prototype.constructor = Bool;
+
+function Bool(value) {
+  this.type = 'bool';
+  this.value = value;
+}
+
+// A boolean evaluates to itself
+Bool.prototype.eval = function(environment) {
+  return this;
+};
+
+// And printing it prints its value
+Bool.prototype.toString = function() {
+  return this.value.toString();
+};
+
+//------------------------------------------------------------------------------
 // A function is an expression of a number of arguments
 Func.prototype = new Expression();
 Func.prototype.constructor = Func;
 
 function Func(name, args) {
+  this.type = 'function';
   this.name = name;
   this.args = args;
 }
@@ -73,7 +96,7 @@ Func.prototype.eval = function(env) {
   return f.body.call(undefined, newEnv);
 };
 
-// And printing it is undefined...
+// And printing it is implementation defined.
 Func.prototype.toString = function() {
   return '<function(' + this.name + ')>';
 };
@@ -84,6 +107,7 @@ List.prototype = new Expression();
 List.prototype.constructor = List;
 
 function List(elements) {
+  this.type = 'list';
   this.elements = elements;
 }
 
@@ -100,4 +124,28 @@ List.prototype.eval = function(env) {
 List.prototype.toString = function() {
   var p = this.elements.map(function(x) { return x.toString(); });
   return '[' + p.join(' ') + ']';
+};
+
+//------------------------------------------------------------------------------
+// A TO form is a function definition.
+ToForm.prototype = new Expression();
+ToForm.prototype.constructor = ToForm;
+
+function ToForm(name, args, body) {
+  this.type = 'TO';
+  this.name = name;
+  this.args = args;
+  this.body = body;
+}
+
+// Evaluating a TO form binds the function body to the name.
+ToForm.prototype.eval = function(env) {
+  var b = this.body;
+  env.bindFunction(this.name, this.args, function(e) { return b.eval(e); });
+  return this;
+};
+
+// And printing it is implementation defined.
+ToForm.prototype.toString = function() {
+  return 'TO ' + this.name;
 };

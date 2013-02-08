@@ -18,8 +18,11 @@ token_ns.Enum = {
   NUMBER:6,
   LEFT_PAREN:7,
   RIGHT_PAREN:8,
-  FORM:9,
-  END:10
+  TO:9,
+  END:10,
+  COLON:11,
+  QUOTE:12,
+  BOOL:13
 };
 
 function Token(type, lexeme) {
@@ -48,14 +51,13 @@ Tokenizer.prototype.matchToken = function(s) {
   case ':':
     // dots
     this.input = s.substring(1);
-    this.tokenqueue.push(new Token(token_ns.Enum.WORD, 'THING'));
-    this.tokenqueue.push(new Token(token_ns.Enum.FORM, 'QUOTE'));
+    this.tokenqueue.push(new Token(token_ns.Enum.COLON, ':'));
     break;
 
   case '"':
     // quotes
     this.input = s.substring(1);
-    this.tokenqueue.push(new Token(token_ns.Enum.FORM, 'QUOTE'));
+    this.tokenqueue.push(new Token(token_ns.Enum.QUOTE, '"'));
     break;
 
   case '(':
@@ -101,6 +103,7 @@ Tokenizer.prototype.matchToken = function(s) {
 
   case '*':
   case '/':
+  case '%':
     this.input = s.substring(1);
     this.tokenqueue.push(new Token(token_ns.Enum.MULOP, s.substring(0,1)));
     break;
@@ -115,14 +118,28 @@ Tokenizer.prototype.matchToken = function(s) {
     // TO special form
     if (s.substring(0, 3) == 'TO ') {
       this.input = s.substring(3);
-      this.tokenqueue.push(new Token(token_ns.Enum.FORM, 'TO'));
+      this.tokenqueue.push(new Token(token_ns.Enum.TO, 'TO'));
       break;
     }
 
-    // END special form
+    // END
     if (s.substring(0, 4) == 'END ') {
       this.input = s.substring(4);
       this.tokenqueue.push(new Token(token_ns.Enum.END, 'END'));
+      break;
+    }
+
+    // TRUE
+    if (s.substring(0, 5) == 'TRUE ') {
+      this.input = s.substring(5);
+      this.tokenqueue.push(new Token(token_ns.Enum.BOOL, 'TRUE'));
+      break;
+    }
+
+    // FALSE
+    if (s.substring(0, 6) == 'FALSE ') {
+      this.input = s.substring(6);
+      this.tokenqueue.push(new Token(token_ns.Enum.BOOL, 'FALSE'));
       break;
     }
 
@@ -135,7 +152,7 @@ Tokenizer.prototype.matchToken = function(s) {
     }
     else {
       // words
-      var wordRE = /[^ \[\]\(\)\+\-\*\/=<>]+/;
+      var wordRE = /[^\s\[\]\(\)\+\-\*\/=<>]+/;
       result = s.match(wordRE);
       if (result) {
         this.input = s.substring(result[0].length);
@@ -174,10 +191,19 @@ Tokenizer.prototype.consume = function() {
 };
 
 //------------------------------------------------------------------------------
-Tokenizer.prototype.expect = function(type) {
+Tokenizer.prototype.expectType = function(type, err) {
   var t = this.consume();
-  if (t.type != type) {
-    throw "Expecting a " + type + ", found a " + t.type;
+  if (t == undefined || t.type != type) {
+    throw err;
+  }
+  return t;
+};
+
+//------------------------------------------------------------------------------
+Tokenizer.prototype.expectLexeme = function(lexeme, err) {
+  var t = this.consume();
+  if (t == undefined || t.lexeme != lexeme) {
+    throw err;
   }
   return t;
 };

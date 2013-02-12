@@ -96,6 +96,7 @@ Tokenizer.prototype.matchToken = function(s) {
     this.input = s.substring(1);
     this.tokenqueue.push(new Token(token_ns.Enum.COLON, ':'));
     // oddly, after dots the quotedWordRE is NOT used
+    // but we do expect a word... TODO
     return;
 
   case '"':

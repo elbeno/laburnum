@@ -3,18 +3,18 @@ function Word(value) {
   this.value = value.toString();
 
   // try to make a number
-  this.jvalue = parseFloat(value);
-  if (!isNaN(this.jvalue) && isFinite(value)) {
+  this.jvalue = parseFloat(this.value);
+  if (!isNaN(this.jvalue) && isFinite(this.value)) {
     this.type = 'numeric';
     return;
   }
 
   // otherwise, try to make a boolean
-  if (value.toLowerCase() == 'true') {
+  if (this.value.toLowerCase() == 'true') {
     this.jvalue = true;
     this.type = 'boolean';
   }
-  else if (value.toLowerCase() == 'false') {
+  else if (this.value.toLowerCase() == 'false') {
     this.jvalue = false;
     this.type = 'boolean';
   }

@@ -42,7 +42,6 @@ $.fn.scrollToEnd = function() {
 
 var welcomeMessage = 'Welcome!\n';
 var expressionIndex = 0;
-var globalEnv = new Environment();
 InstallBuiltins(globalEnv);
 
 // Display a prompt and optional msg
@@ -105,41 +104,25 @@ $(function() {
       // Capture the input.
       var input = $(this).val().substring(promptPos);
 
+      // print a newline
+      $(this).val($(this).val() + '\n');
+
       try {
+        var terp = new Interpreter(input, globalEnv);
+        var e = terp.interpret();
 
-        // Parse it. We pass the environment to parse because parsing logo
-        // requires knowledge of function arities which are bound in the
-        // environment.
-        var expression = parse(input, globalEnv);
-
-        if (expression != undefined) {
-
-          // We are going to evaluate the expression. Add a line break in cae
-          // evaluation results in printing.
-          $(this).val($(this).val() + '\n');
-
-          // Evaluate it.
-          var output = expression.eval(globalEnv).toString();
-
-          // Print the result, if any.
-          if (output != '') {
-            $(this).val($(this).val() + output + '\n');
-          }
-
-          // Now make a new prompt.
-          displayPrompt($(this));
-          return false;
-        }
-        else {
-          $(this).val($(this).val() + '\n>');
-          $(this).scrollToEnd();
-          return false;
+        // The result should be undefined...
+        if (e != undefined) {
+          $(this).val($(this).val() + "You don't say what to do with " + e.toString() + '\n');
         }
 
+        // Now make a new prompt.
+        displayPrompt($(this));
+        return false;
       }
       catch (err) {
         // Display the error and make a new prompt
-        $(this).val($(this).val() + '\n' + err + '\n');
+        $(this).val($(this).val() + err + '\n');
         displayPrompt($(this));
         return false;
       }

@@ -102,6 +102,33 @@ function Make(env) {
 }
 
 //------------------------------------------------------------------------------
+function Reducer(env, funcname, f, init) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
+
+  var args = [a, b];
+  var rest = env.lookupVariable('[rest]');
+  if (rest != undefined) {
+    args = args.concat(rest.values);
+  }
+
+  var s = args.reduce(function(a, x) {
+    if (x.type != 'numeric') {
+      throw funcname + " doesn't like " + x.toString() + ' as input';
+    }
+    return f(a, x.jvalue); }, init);
+
+  return new Word(s);
+}
+
+//------------------------------------------------------------------------------
+var Sum = function(env) {
+  return Reducer(env, 'sum', function(a, b) { return a + b; }, 0); };
+
+var Product = function(env) {
+  return Reducer(env, 'product', function(a, b) { return a * b; }, 1); };
+
+//------------------------------------------------------------------------------
 function InstallBuiltins(env) {
   env.bindFunction('print', ['arg'], Print);
   env.bindFunction('make', ['name', 'value'], Make);
@@ -110,4 +137,6 @@ function InstallBuiltins(env) {
   env.bindFunction('sentence', ['a', 'b'], Sentence);
   env.bindFunction('se', ['a', 'b'], Sentence);
   env.bindFunction('fput', ['car', 'cdr'], FPut);
+  env.bindFunction('sum', ['a', 'b'], Sum);
+  env.bindFunction('product', ['a', 'b'], Product);
 }

@@ -42,7 +42,10 @@ $.fn.scrollToEnd = function() {
 
 var welcomeMessage = 'Welcome!\n';
 var expressionIndex = 0;
+
+var globalEnv = new Environment(undefined);
 InstallBuiltins(globalEnv);
+var terp = new Interpreter(globalEnv);
 
 // Display a prompt and optional msg
 function displayPrompt(target, msg)
@@ -104,27 +107,34 @@ $(function() {
       // Capture the input.
       var input = $(this).val().substring(promptPos);
 
-      // print a newline
-      $(this).val($(this).val() + '\n');
-
-      try {
-        var terp = new Interpreter(input, globalEnv);
-        var e = terp.interpret();
-
-        // The result should be undefined...
-        if (e != undefined) {
-          $(this).val($(this).val() + "You don't say what to do with " + e.toString() + '\n');
-        }
-
-        // Now make a new prompt.
-        displayPrompt($(this));
+      if (input.charAt(input.length - 1) == '~') {
+        // print a newline and continuation ~
+        $(this).val($(this).val() + '\n~ ');
+        $(this).scrollToEnd();
         return false;
       }
-      catch (err) {
-        // Display the error and make a new prompt
-        $(this).val($(this).val() + err + '\n');
-        displayPrompt($(this));
-        return false;
+      else {
+        // print a newline
+        $(this).val($(this).val() + '\n');
+
+        try {
+          var e = terp.interpret(input);
+
+          // The result should be undefined...
+          if (e != undefined) {
+            $(this).val($(this).val() + "You don't say what to do with " + e.toString() + '\n');
+          }
+
+          // Now make a new prompt.
+          displayPrompt($(this));
+          return false;
+        }
+        catch (err) {
+          // Display the error and make a new prompt
+          $(this).val($(this).val() + err + '\n');
+          displayPrompt($(this));
+          return false;
+        }
       }
     }
 

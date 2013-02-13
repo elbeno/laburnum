@@ -61,7 +61,9 @@ Environment.prototype.callFunction = function(f, args, extraArgs) {
     newEnv.bindVariable(f.arglist[i], args[i]);
   }
 
+  if (extraArgs.length > 0) {
+    newEnv.bindVariable('[rest]', new List(extraArgs));
+  }
+
   return f.body.call(undefined, newEnv);
 };
-
-var globalEnv = new Environment();

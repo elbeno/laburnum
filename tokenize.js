@@ -45,16 +45,16 @@ function Tokenizer(input) {
 
   // word delimiters change with quoting
   // a word inside []
-  this.listWordRE = /[^\s\[\]]+/;
+  this.listWordRE = /^[^\s\[\]]+/;
   // a word preceded by "
-  this.quotedWordRE = /[^\s\[\]\(\)]+/;
+  this.quotedWordRE = /^[^\s\[\]\(\)]+/;
   // a normal word
-  this.wordRE = /[^\s\[\]\(\)\+\-\*\/=<>]+/;
+  this.wordRE = /^[^\s\[\]\(\)\+\-\*\/=<>]+/;
 }
 
 //------------------------------------------------------------------------------
 Tokenizer.prototype.matchWord = function(s, wordRE) {
-  result = s.match(wordRE);
+  var result = s.match(wordRE);
   if (result) {
     this.input = s.substring(result[0].length);
     this.tokenqueue.push(new Token(token_ns.Enum.WORD, result[0]));
@@ -95,8 +95,16 @@ Tokenizer.prototype.matchToken = function(s) {
     // dots
     this.input = s.substring(1);
     this.tokenqueue.push(new Token(token_ns.Enum.COLON, ':'));
-    // oddly, after dots the quotedWordRE is NOT used
-    // but we do expect a word... TODO
+    // oddly, after dots the quotedWordRE is NOT used, but we do expect a word,
+    // so check if the next character is NOT part of a word, and emit an empty
+    // word if so
+    s = this.input;
+    if (s == undefined || /[\s\[\]\(\)\+\-\*\/=<>]/.test(s.charAt(0))) {
+      this.tokenqueue.push(new Token(token_ns.Enum.WORD, ''));
+      return;
+    }
+    // otherwise eat the next word straight away
+    this.matchWord(s, this.wordRE);
     return;
 
   case '"':

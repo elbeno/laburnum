@@ -13,10 +13,12 @@ function Word(value) {
   if (this.value.toLowerCase() == 'true') {
     this.jvalue = true;
     this.type = 'boolean';
+    return;
   }
   else if (this.value.toLowerCase() == 'false') {
     this.jvalue = false;
     this.type = 'boolean';
+    return;
   }
 
   this.type = 'word';
@@ -34,7 +36,11 @@ Word.prototype.isBoolean = function() {
 
 //------------------------------------------------------------------------------
 Word.prototype.toString = function() {
-  return this.value;
+  if (this.value) {
+    return this.value;
+  }
+  // the empty word is surrounded by bars
+  return '||';
 };
 
 //------------------------------------------------------------------------------

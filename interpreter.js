@@ -1,13 +1,14 @@
 //------------------------------------------------------------------------------
-function Interpreter(input, env) {
-  // replace any continuation prompts
-  var s = input.replace(/\n>/g, '\n');
-  this.tokenizer = new Tokenizer(s);
+function Interpreter(env) {
   this.env = env;
 }
 
 //------------------------------------------------------------------------------
-Interpreter.prototype.interpret = function() {
+Interpreter.prototype.interpret = function(input) {
+  // replace any continuation prompts
+  var s = input.replace(/~\n~ /g, '');
+  this.tokenizer = new Tokenizer(s);
+
   return this.relop();
 };
 
@@ -196,11 +197,6 @@ Interpreter.prototype.expr = function() {
     return this.value(t.lexeme, false);
     break;
 
-  case token_ns.Enum.RIGHT_PAREN:
-    // right paren should be matched with expect after left paren
-    throw 'unexpected )';
-    break;
-
   case token_ns.Enum.RIGHT_SQUARE_BRACKET:
     // right square bracket should be matched by list
     throw 'unexpected ]';
@@ -230,7 +226,7 @@ Interpreter.prototype.expr = function() {
     }
 
     // a number or bool: start interpretation again at the top level
-    e = this.interpret();
+    e = this.relop();
     this.tokenizer.expect(')', 'unmatched (');
     return e;
     break;
@@ -254,10 +250,12 @@ Interpreter.prototype.listexpr = function() {
 
     switch (t.type) {
     case token_ns.Enum.WORD:
+      this.tokenizer.consume();
       datums.push(new Word(t.lexeme));
       break;
 
     case token_ns.Enum.LEFT_SQUARE_BRACKET:
+      this.tokenizer.consume();
       datums.push(this.listexpr());
       break;
 
@@ -265,7 +263,6 @@ Interpreter.prototype.listexpr = function() {
       throw "bad token in list: " + t.lexeme;
     }
 
-    this.tokenizer.consume();
     t = this.tokenizer.peek();
   }
 
@@ -300,10 +297,19 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   var extraArgs = [];
   if (eatExtraArgs) {
     var t = this.tokenizer.peek();
-    while (t != undefined && t != token_ns.Enum.RIGHT_SQUARE_BRACKET) {
-      extraArgs.push(this.relop());
+    while (t != undefined && t.type != token_ns.Enum.RIGHT_PAREN) {
+      var e = this.relop();
+      if (e != undefined) {
+        extraArgs.push(e);
+      }
       t = this.tokenizer.peek();
     }
+
+    if (t == undefined) {
+      throw 'unmatched (';
+    }
+
+    this.tokenizer.consume();
   }
 
   return this.env.callFunction(f, args, extraArgs);

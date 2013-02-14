@@ -21,7 +21,7 @@ Environment.prototype.lookupFunction = function(name) {
     }
   }
 
-  throw "I don't know how to " + name;
+  throw { message: "I don't know how to " + name };
 };
 
 Environment.prototype.lookupVariable = function(name) {

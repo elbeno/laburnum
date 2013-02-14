@@ -2,6 +2,10 @@
 function Word(value) {
   this.value = value.toString();
 
+  if (this.value.charAt(0) == '|' && this.value.charAt(value.length-1) == '|') {
+    this.value = this.value.substring(1, value.length-1);
+  }
+
   // try to make a number
   this.jvalue = parseFloat(this.value);
   if (!isNaN(this.jvalue) && isFinite(this.value)) {
@@ -36,11 +40,11 @@ Word.prototype.isBoolean = function() {
 
 //------------------------------------------------------------------------------
 Word.prototype.toString = function() {
-  if (this.value) {
-    return this.value;
+  // we need to bar a word with special characters in it
+  if (!this.value || /[\s\[\]\(\)\+\-\*\/=<>]/.test(this.value)) {
+    return '|' + this.value + '|';
   }
-  // the empty word is surrounded by bars
-  return '||';
+  return this.value;
 };
 
 //------------------------------------------------------------------------------

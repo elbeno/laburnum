@@ -32,8 +32,11 @@ Token.prototype.toString = function() {
 
 //------------------------------------------------------------------------------
 function Tokenizer(input) {
-  // add a space to ease end-of-input detection
-  this.input = input + ' ';
+
+  // replace any manual continuation prompts
+  this.input = input.replace(/~\n~ /g, '');
+  // replace any automatic continuation prompts
+  this.input = this.input.replace(/(~ |\| |> )/g, '');
 
   // a token queue is used for peeking
   this.tokenqueue = [];
@@ -43,9 +46,6 @@ function Tokenizer(input) {
   // how many levels of quoted list we're in
   this.insideList = 0;
 
-  // word delimiters change with quoting
-  // a word inside []
-  this.listWordRE = /^[^\s\[\]]+/;
   // a word preceded by "
   this.quotedWordRE = /^[^\s\[\]\(\)]+/;
   // a normal word
@@ -54,7 +54,19 @@ function Tokenizer(input) {
 
 //------------------------------------------------------------------------------
 Tokenizer.prototype.matchWord = function(s, wordRE) {
-  var result = s.match(wordRE);
+  // TODO: match/pair bars in the middle of words
+
+  // first, try a barred word
+  var result = false;
+  if (s.charAt(0) == '|') {
+    result = s.match(/^\|[\w\W]*\|/);
+    if (!result) {
+      throw { continuationPrompt: '| ' };
+    }
+  }
+  else {
+    result = s.match(wordRE);
+  }
   if (result) {
     this.input = s.substring(result[0].length);
     this.tokenqueue.push(new Token(token_ns.Enum.WORD, result[0]));
@@ -65,25 +77,9 @@ Tokenizer.prototype.matchWord = function(s, wordRE) {
 //------------------------------------------------------------------------------
 Tokenizer.prototype.matchToken = function(s) {
 
-  // if we're inside a list, match the word with the listWordRE
+  // if we're inside a list, words are delimited by whitespace and []
   if (this.insideList > 0) {
-    if (this.matchWord(s, this.listWordRE)) {
-      return;
-    }
-  }
-
-  // if we're quoting, check for the empty word, then match with the
-  // quotedWordRE
-  if (this.quoteNextToken) {
-    if (s == undefined || /[\s\[\]]/.test(s.charAt(0))) {
-      this.tokenqueue.push(new Token(token_ns.Enum.WORD, ''));
-      this.quoteNextToken = false;
-      // whitespace will be eaten next time around
-      return;
-    }
-
-    if (this.matchWord(s, this.quotedWordRE)) {
-      this.quoteNextToken = false;
+    if (this.matchWord(s, /^[^\s\[\]]+/)) {
       return;
     }
   }
@@ -95,11 +91,10 @@ Tokenizer.prototype.matchToken = function(s) {
     // dots
     this.input = s.substring(1);
     this.tokenqueue.push(new Token(token_ns.Enum.COLON, ':'));
-    // oddly, after dots the quotedWordRE is NOT used, but we do expect a word,
-    // so check if the next character is NOT part of a word, and emit an empty
-    // word if so
+    // after dots we expect a normally-delimited word, so check if the next
+    // character is NOT part of a word, and emit an empty word if so
     s = this.input;
-    if (s == undefined || /[\s\[\]\(\)\+\-\*\/=<>]/.test(s.charAt(0))) {
+    if (s === undefined || !this.wordRE.test(s)) {
       this.tokenqueue.push(new Token(token_ns.Enum.WORD, ''));
       return;
     }
@@ -111,7 +106,15 @@ Tokenizer.prototype.matchToken = function(s) {
     // quotes
     this.input = s.substring(1);
     this.tokenqueue.push(new Token(token_ns.Enum.QUOTE, '"'));
-    this.quoteNextToken = true;
+    // after quote we expect a differently delimited word, so check if the next
+    // character is NOT part of a word, and emit an empty word if so
+    s = this.input;
+    if (s === undefined || !this.quotedWordRE.test(s)) {
+      this.tokenqueue.push(new Token(token_ns.Enum.WORD, ''));
+      return;
+    }
+    // otherwise eat the next word straight away
+    this.matchWord(s, this.quotedWordRE);
     return;
 
   case '(':
@@ -179,7 +182,7 @@ Tokenizer.prototype.matchToken = function(s) {
 
   // if we're not at the end of the string, it must be an illegal character
   if (s) {
-    throw 'Illegal character in input: ' + s.charAt(0);
+    throw { message: 'Illegal character in input: ' + s.charAt(0) };
   }
 };
 
@@ -214,7 +217,7 @@ Tokenizer.prototype.consume = function() {
 //------------------------------------------------------------------------------
 Tokenizer.prototype.expect = function(lexeme, err) {
   var t = this.consume();
-  if (t == undefined || t.lexeme != lexeme) {
+  if (t === undefined || t.lexeme != lexeme) {
     throw err;
   }
   return t;

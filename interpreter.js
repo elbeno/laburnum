@@ -1,13 +1,17 @@
 //------------------------------------------------------------------------------
-function Interpreter(env) {
-  this.env = env;
+function Interpreter() {
 }
 
 //------------------------------------------------------------------------------
-Interpreter.prototype.interpret = function(input) {
-  // replace any continuation prompts
-  var s = input.replace(/~\n~ /g, '');
-  this.tokenizer = new Tokenizer(s);
+Interpreter.prototype.interpret = function(input, env) {
+
+  // if the line ends with ~, do a continuation
+  if (input.charAt(input.length - 1) == '~') {
+    throw { continuationPrompt: '~ ' };
+  }
+
+  this.env = env;
+  this.tokenizer = new Tokenizer(input);
 
   return this.relop();
 };
@@ -21,15 +25,15 @@ Interpreter.prototype.relop = function() {
     this.tokenizer.consume();
     var rhs = this.addop();
 
-    if (rhs == undefined) {
-      throw "Not enough inputs to " + t.lexeme;
+    if (rhs === undefined) {
+      throw { message: "Not enough inputs to " + t.lexeme };
     }
 
     if (!lhs.isNumeric()) {
-      throw t.lexeme + " doesn't like " + lhs.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + lhs.value + ' as input' };
     }
     if (!rhs.isNumeric()) {
-      throw t.lexeme + " doesn't like " + rhs.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + rhs.value + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -60,15 +64,15 @@ Interpreter.prototype.addop = function() {
     this.tokenizer.consume();
     var rhs = this.mulop();
 
-    if (rhs == undefined) {
-      throw "Not enough inputs to " + t.lexeme;
+    if (rhs === undefined) {
+      throw { message: "Not enough inputs to " + t.lexeme };
     }
 
     if (!lhs.isNumeric()) {
-      throw t.lexeme + " doesn't like " + lhs.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + lhs.value + ' as input' };
     }
     if (!rhs.isNumeric()) {
-      throw t.lexeme + " doesn't like " + rhs.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + rhs.value + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -95,15 +99,15 @@ Interpreter.prototype.mulop = function() {
     this.tokenizer.consume();
     var rhs = this.unaryop();
 
-    if (rhs == undefined) {
-      throw "Not enough inputs to " + t.lexeme;
+    if (rhs === undefined) {
+      throw { message: "Not enough inputs to " + t.lexeme };
     }
 
     if (!lhs.isNumeric()) {
-      throw t.lexeme + " doesn't like " + lhs.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + lhs.value + ' as input' };
     }
     if (!rhs.isNumeric()) {
-      throw t.lexeme + " doesn't like " + rhs.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + rhs.value + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -131,11 +135,11 @@ Interpreter.prototype.unaryop = function() {
     this.tokenizer.consume();
     var e = this.expr();
 
-    if (e == undefined) {
-      throw "Not enough inputs to " + t.lexeme;
+    if (e === undefined) {
+      throw { message: "Not enough inputs to " + t.lexeme };
     }
     if (!e.isNumeric()) {
-      throw t.lexeme + " doesn't like " + e.value + ' as input';
+      throw { message: t.lexeme + " doesn't like " + e.value + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -155,7 +159,7 @@ Interpreter.prototype.unaryop = function() {
 Interpreter.prototype.expr = function() {
   var t = this.tokenizer.peek();
 
-  if (t == undefined) {
+  if (t === undefined) {
     return undefined;
   }
 
@@ -164,24 +168,16 @@ Interpreter.prototype.expr = function() {
   case token_ns.Enum.QUOTE:
     this.tokenizer.consume();
     t = this.tokenizer.consume();
-    if (t.type != token_ns.Enum.WORD) {
-      throw 'tokenization error: expecting word after "';
-    }
     return new Word(t.lexeme);
     break;
 
   case token_ns.Enum.COLON:
     this.tokenizer.consume();
-    t = this.tokenizer.peek();
-    // dots expects a word, but doesn't use the quoted word delimiters, so
-    // failure to match a word here should be treated as the empty word
-    if (t.type != token_ns.Enum.WORD) {
-      return new Word('');
-    }
-    // thing returns the variable bound to that name
+    t = this.tokenizer.consume();
     e = this.env.lookupVariable(t.lexeme);
-    if (e == undefined) {
-      throw t.lexeme + ' has no value';
+    if (e === undefined) {
+      e = new Word(t.lexeme);
+      throw { message: e.toString() + ' has no value' };
     }
     return e;
     break;
@@ -199,7 +195,7 @@ Interpreter.prototype.expr = function() {
 
   case token_ns.Enum.RIGHT_SQUARE_BRACKET:
     // right square bracket should be matched by list
-    throw 'unexpected ]';
+    throw { message: 'unexpected ]' };
     break;
 
   case token_ns.Enum.LEFT_PAREN:
@@ -207,12 +203,12 @@ Interpreter.prototype.expr = function() {
     this.tokenizer.consume();
     t = this.tokenizer.peek();
 
-    if (t == undefined) {
-      throw 'unmatched (';
+    if (t === undefined) {
+      throw { continuationPrompt: '~ ' };
     }
 
     if (t.type == token_ns.Enum.RIGHT_PAREN) {
-      throw 'unexpected )';
+      throw { message: 'unexpected )' };
     }
 
     // if the next token is a word and is not numeric or boolean, treat it as a
@@ -227,7 +223,7 @@ Interpreter.prototype.expr = function() {
 
     // a number or bool: start interpretation again at the top level
     e = this.relop();
-    this.tokenizer.expect(')', 'unmatched (');
+    t = this.tokenizer.expect(')', { continuationPrompt: '~ ' });
     return e;
     break;
 
@@ -260,14 +256,14 @@ Interpreter.prototype.listexpr = function() {
       break;
 
     default:
-      throw "bad token in list: " + t.lexeme;
+      throw { message: "bad token in list: " + t.lexeme };
     }
 
     t = this.tokenizer.peek();
   }
 
-  if (t == undefined) {
-    return undefined;
+  if (t === undefined) {
+    throw { continuationPrompt: '~ ' };
   }
 
   this.tokenizer.consume();
@@ -288,7 +284,7 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   var args = [];
   for (var i = 0; i < f.arglist.length; ++i) {
     var e = this.relop();
-    if (e == undefined) {
+    if (e === undefined) {
       throw 'not enough inputs to ' + name;
     }
     args.push(e);
@@ -305,7 +301,7 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
       t = this.tokenizer.peek();
     }
 
-    if (t == undefined) {
+    if (t === undefined) {
       throw 'unmatched (';
     }
 

@@ -45,7 +45,6 @@ var expressionIndex = 0;
 
 var globalEnv = new Environment(undefined);
 InstallBuiltins(globalEnv);
-var terp = new Interpreter(globalEnv);
 
 // Display a prompt and optional msg
 function displayPrompt(target, msg)
@@ -107,34 +106,34 @@ $(function() {
       // Capture the input.
       var input = $(this).val().substring(promptPos);
 
-      if (input.charAt(input.length - 1) == '~') {
-        // print a newline and continuation ~
-        $(this).val($(this).val() + '\n~ ');
-        $(this).scrollToEnd();
+      // print a newline
+      $(this).val($(this).val() + '\n');
+
+      try {
+        var terp = new Interpreter();
+        var e = terp.interpret(input, globalEnv);
+
+        // The result should be undefined...
+        if (e != undefined) {
+          $(this).val($(this).val() + "You don't say what to do with " + e.toString() + '\n');
+        }
+
+        // Now make a new prompt.
+        displayPrompt($(this));
         return false;
       }
-      else {
-        // print a newline
-        $(this).val($(this).val() + '\n');
-
-        try {
-          var e = terp.interpret(input);
-
-          // The result should be undefined...
-          if (e != undefined) {
-            $(this).val($(this).val() + "You don't say what to do with " + e.toString() + '\n');
-          }
-
-          // Now make a new prompt.
-          displayPrompt($(this));
-          return false;
+      catch (except) {
+        // if the exception indicates a continuation line, do that
+        if (except.continuationPrompt) {
+          $(this).val($(this).val() + except.continuationPrompt);
+          $(this).scrollToEnd();
         }
-        catch (err) {
+        else {
           // Display the error and make a new prompt
-          $(this).val($(this).val() + err + '\n');
+          $(this).val($(this).val() + except.message + '\n');
           displayPrompt($(this));
-          return false;
         }
+        return false;
       }
     }
 

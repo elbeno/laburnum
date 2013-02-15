@@ -26,10 +26,15 @@ Token.prototype.toString = function() {
 //------------------------------------------------------------------------------
 function Tokenizer(input) {
 
-  // replace any manual continuation prompts
-  var s = input.replace(/~\n~ /g, '');
-  // replace any automatic continuation prompts
-  s = s.replace(/(~ |\| |> )/g, '');
+  // replace any continuation prompts
+  var s = input.replace(/(\n~ |\n\| |\n\\ |\n> )/g, '\n');
+
+  // get rid of comments (but leave tildes at end)
+  s = s.replace(/;[^\n~]*\n/g, '\n');
+  s = s.replace(/;[^\n~]*~/g, '~');
+
+  // elide any ~ continuation lines
+  s = s.replace(/~\n/g, '');
 
   // the result of tokenizing
   this.tokenqueue = [];
@@ -119,7 +124,6 @@ Tokenizer.prototype.tokenize = function(s, startIndex) {
         ++startIndex;
       }
       break;
-
     }
   }
 };
@@ -161,7 +165,19 @@ Tokenizer.prototype.tokenizeWord = function(s, startIndex, delimiters) {
   {
     var c = s.charAt(startIndex);
 
-    if (c == '|') {
+    if (c == '\\') {
+      ++startIndex;
+      if (startIndex == s.length) {
+        throw { continuationPrompt: '\\ ' };
+      }
+      c = s.charAt(startIndex);
+      // if the last character is a \ we just escaped the newline and should continue
+      if (c == '\n' && startIndex == s.length - 1) {
+        throw { continuationPrompt: '\\ ' };
+      }
+      lexeme = lexeme + c;
+    }
+    else if (c == '|') {
       barred = !barred;
     }
     else if (barred) {

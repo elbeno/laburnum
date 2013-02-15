@@ -5,8 +5,8 @@ function Interpreter() {
 //------------------------------------------------------------------------------
 Interpreter.prototype.interpret = function(input, env) {
 
-  // if the line ends with ~, do a continuation
-  if (input.charAt(input.length - 1) == '~') {
+  // if the line ends with ~ (before the newline), do a continuation
+  if (input.charAt(input.length - 2) == '~') {
     throw { continuationPrompt: '~ ' };
   }
 

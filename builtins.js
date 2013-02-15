@@ -1,20 +1,30 @@
 //------------------------------------------------------------------------------
-function Print(env) {
-  var a = env.lookupVariable('arg');
+function Reducer(env, f, init) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
 
-  var args = [a];
+  var args = [a, b];
   var rest = env.lookupVariable('[rest]');
   if (rest != undefined) {
     args = args.concat(rest.values);
   }
 
-  var s = args.map(function(x) { return x.value; }).join(' ');
-
-  var repl = $('#repl');
-  repl.val(repl.val() + s + '\n');
-
-  return undefined;
+  return new Word(args.reduce(f, init));
 }
+
+
+//------------------------------------------------------------------------------
+// Constructors
+
+//------------------------------------------------------------------------------
+var BuildWord = function(env) {
+  return Reducer(env, function(a, b) {
+    if (b.type == 'list') {
+      throw { message: "word doesn't like " + b.toString() + ' as input' };
+    }
+    return a + b.value;
+  }, '');
+};
 
 //------------------------------------------------------------------------------
 function BuildList(env) {
@@ -56,8 +66,8 @@ function Sentence(env) {
 
 //------------------------------------------------------------------------------
 function FPut(env) {
-  var car = env.lookupVariable('car');
-  var cdr = env.lookupVariable('cdr');
+  var car = env.lookupVariable('a');
+  var cdr = env.lookupVariable('b');
 
   // if the second arg is a word, the first arg must be a word of one letter
   if (cdr.type == 'word') {
@@ -72,6 +82,68 @@ function FPut(env) {
 }
 
 //------------------------------------------------------------------------------
+function LPut(env) {
+  var car = env.lookupVariable('a');
+  var cdr = env.lookupVariable('b');
+
+  // if the second arg is a word, the first arg must be a word of one letter
+  if (cdr.type == 'word') {
+    if (car.type == 'list' || car.value.length > 1) {
+      throw "fput doesn't like " + cdr.value + ' as input';
+    }
+
+    return new Word(cdr.value + car.value);
+  }
+
+  return new List(cdr.values.concat([car]));
+}
+
+//------------------------------------------------------------------------------
+function Combine(env) {
+  var b = env.lookupVariable('b');
+
+  if (b.type == 'list') {
+    return FPut(env);
+  }
+  return BuildWord(env);
+}
+
+//------------------------------------------------------------------------------
+function Reverse(env) {
+  var a = env.lookupVariable('a');
+
+  if (a.type == 'list') {
+    return new List(a.values.reverse());
+  }
+  return new Word(a.value.split('').reverse().join(''));
+}
+
+//------------------------------------------------------------------------------
+var gensymIndex = 0;
+
+function Gensym(env) {
+  return new Word('g' + ++gensymIndex);
+}
+
+//------------------------------------------------------------------------------
+function Print(env) {
+  var a = env.lookupVariable('arg');
+
+  var args = [a];
+  var rest = env.lookupVariable('[rest]');
+  if (rest != undefined) {
+    args = args.concat(rest.values);
+  }
+
+  var s = args.map(function(x) { return x.value; }).join(' ');
+
+  var repl = $('#repl');
+  repl.val(repl.val() + s + '\n');
+
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
 function Make(env) {
   var n = env.lookupVariable('name');
   var v = env.lookupVariable('value');
@@ -79,20 +151,6 @@ function Make(env) {
   globalEnv.bindVariable(n.value, v);
 
   return undefined;
-}
-
-//------------------------------------------------------------------------------
-function Reducer(env, f, init) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
-
-  var args = [a, b];
-  var rest = env.lookupVariable('[rest]');
-  if (rest != undefined) {
-    args = args.concat(rest.values);
-  }
-
-  return new Word(args.reduce(f, init));
 }
 
 //------------------------------------------------------------------------------
@@ -116,24 +174,21 @@ var Product = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var BuildWord = function(env) {
-  return Reducer(env, function(a, b) {
-    if (b.type == 'list') {
-      throw { message: "word doesn't like " + b.toString() + ' as input' };
-    }
-    return a + b.value;
-  }, '');
-};
-
-//------------------------------------------------------------------------------
 function InstallBuiltins(env) {
-  env.bindFunction('print', ['arg'], Print);
-  env.bindFunction('make', ['name', 'value'], Make);
+  // Constructors
   env.bindFunction('word', ['a', 'b'], BuildWord);
   env.bindFunction('list', ['a', 'b'], BuildList);
   env.bindFunction('sentence', ['a', 'b'], Sentence);
   env.bindFunction('se', ['a', 'b'], Sentence);
   env.bindFunction('fput', ['car', 'cdr'], FPut);
+  env.bindFunction('lput', ['car', 'cdr'], LPut);
+  env.bindFunction('combine', ['a', 'b'], Combine);
+  env.bindFunction('reverse', ['a'], Reverse);
+  env.bindFunction('gensym', [], Gensym);
+
+
+  env.bindFunction('print', ['arg'], Print);
+  env.bindFunction('make', ['name', 'value'], Make);
   env.bindFunction('sum', ['a', 'b'], Sum);
   env.bindFunction('product', ['a', 'b'], Product);
 }

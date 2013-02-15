@@ -39,9 +39,12 @@ Word.prototype.isBoolean = function() {
 };
 
 //------------------------------------------------------------------------------
-Word.prototype.toString = function() {
+Word.prototype.toString = function(delimeters) {
+  if (delimeters === undefined) {
+    delimeters = /[\s\[\]\(\)\+\-\*\/=<>]/;
+  }
   // we need to bar a word with special characters in it
-  if (!this.value || /[\s\[\]\(\)\+\-\*\/=<>]/.test(this.value)) {
+  if (!this.value || delimeters.test(this.value)) {
     return '|' + this.value + '|';
   }
   return this.value;
@@ -55,7 +58,7 @@ function List(values) {
 }
 
 List.prototype.toBareString = function() {
-  return this.values.map(function(x) { return x.toString(); }).join(' ');
+  return this.values.map(function(x) { return x.toString(/[\s\[\]]/); }).join(' ');
 };
 
 List.prototype.toString = function() {

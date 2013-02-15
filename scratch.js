@@ -103,11 +103,11 @@ $(function() {
 
     // Return causes a dispatch.
     if (event.keyCode == 13) { // return
-      // Capture the input.
-      var input = $(this).val().substring(promptPos);
-
       // print a newline
       $(this).val($(this).val() + '\n');
+
+      // Capture the input.
+      var input = $(this).val().substring(promptPos);
 
       try {
         var terp = new Interpreter();

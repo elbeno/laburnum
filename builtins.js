@@ -17,26 +17,6 @@ function Print(env) {
 }
 
 //------------------------------------------------------------------------------
-function BuildWord(env) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
-
-  var args = [a, b];
-  var rest = env.lookupVariable('[rest]');
-  if (rest != undefined) {
-    args = args.concat(rest.values);
-  }
-
-  var s = args.map(function(x) {
-    if (x.type == 'list') {
-      throw "word doesn't like " + x.toString() + ' as input';
-    }
-    return x.value; }).join('');
-
-  return new Word(s);
-}
-
-//------------------------------------------------------------------------------
 function BuildList(env) {
   var a = env.lookupVariable('a');
   var b = env.lookupVariable('b');
@@ -102,7 +82,7 @@ function Make(env) {
 }
 
 //------------------------------------------------------------------------------
-function Reducer(env, funcname, f, init) {
+function Reducer(env, f, init) {
   var a = env.lookupVariable('a');
   var b = env.lookupVariable('b');
 
@@ -112,21 +92,38 @@ function Reducer(env, funcname, f, init) {
     args = args.concat(rest.values);
   }
 
-  var s = args.reduce(function(a, x) {
-    if (x.type != 'numeric') {
-      throw funcname + " doesn't like " + x.toString() + ' as input';
-    }
-    return f(a, x.jvalue); }, init);
-
-  return new Word(s);
+  return new Word(args.reduce(f, init));
 }
 
 //------------------------------------------------------------------------------
 var Sum = function(env) {
-  return Reducer(env, 'sum', function(a, b) { return a + b; }, 0); };
+  return Reducer(env, function(a, b) {
+    if (b.type != 'numeric') {
+      throw { message: "sum doesn't like " + b.toString() + ' as input' };
+    }
+    return a + b.jvalue;
+  }, 0);
+};
 
+//------------------------------------------------------------------------------
 var Product = function(env) {
-  return Reducer(env, 'product', function(a, b) { return a * b; }, 1); };
+  return Reducer(env, function(a, b) {
+    if (b.type != 'numeric') {
+      throw { message: "product doesn't like " + b.toString() + ' as input' };
+    }
+    return a * b.jvalue;
+  }, 1);
+};
+
+//------------------------------------------------------------------------------
+var BuildWord = function(env) {
+  return Reducer(env, function(a, b) {
+    if (b.type == 'list') {
+      throw { message: "word doesn't like " + b.toString() + ' as input' };
+    }
+    return a + b.value;
+  }, '');
+};
 
 //------------------------------------------------------------------------------
 function InstallBuiltins(env) {

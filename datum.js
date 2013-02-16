@@ -41,7 +41,7 @@ Word.prototype.isBoolean = function() {
 //------------------------------------------------------------------------------
 Word.prototype.toString = function(delimeters) {
   if (delimeters === undefined) {
-    delimeters = /[\s\[\]\(\)\+\-\*\/=<>]/;
+    delimeters = /[\s\[\]\(\)\{\}\+\-\*\/=<>]/;
   }
   // we need to bar a word with special characters in it
   if (!this.value || delimeters.test(this.value)) {
@@ -63,4 +63,16 @@ List.prototype.toBareString = function() {
 
 List.prototype.toString = function() {
   return '[' + this.toBareString() + ']';
+};
+
+//------------------------------------------------------------------------------
+function LArray(values, base) {
+  this.type = 'array';
+  this.values = values;
+  this.base = base;
+  this.value = this.toString();
+}
+
+LArray.prototype.toString = function() {
+  return '{' + this.values.map(function(x) { return x.toString(/[\s\[\]\{\}]/); }).join(' ') + '}';
 };

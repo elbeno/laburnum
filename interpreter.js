@@ -232,6 +232,12 @@ Interpreter.prototype.expr = function() {
     this.tokenizer.consume();
     return this.listexpr();
     break;
+
+  case token_ns.Enum.LEFT_CURLY_BRACKET:
+    // list
+    this.tokenizer.consume();
+    return this.arrayexpr();
+    break;
   }
 
   return undefined;
@@ -255,6 +261,11 @@ Interpreter.prototype.listexpr = function() {
       datums.push(this.listexpr());
       break;
 
+    case token_ns.Enum.LEFT_CURLY_BRACKET:
+      this.tokenizer.consume();
+      datums.push(this.arrayexpr());
+      break;
+
     default:
       throw { message: "bad token in list: " + t.lexeme };
     }
@@ -268,6 +279,62 @@ Interpreter.prototype.listexpr = function() {
 
   this.tokenizer.consume();
   return new List(datums);
+};
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.arrayexpr = function() {
+  var t = this.tokenizer.peek();
+
+  var datums = [];
+  while (t != undefined && t.type != token_ns.Enum.RIGHT_CURLY_BRACKET) {
+
+    switch (t.type) {
+    case token_ns.Enum.WORD:
+      this.tokenizer.consume();
+      datums.push(new Word(t.lexeme));
+      break;
+
+    case token_ns.Enum.LEFT_SQUARE_BRACKET:
+      this.tokenizer.consume();
+      datums.push(this.listexpr());
+      break;
+
+    case token_ns.Enum.LEFT_CURLY_BRACKET:
+      this.tokenizer.consume();
+      datums.push(this.arrayexpr());
+      break;
+
+    default:
+      throw { message: "bad token in array: " + t.lexeme };
+    }
+
+    t = this.tokenizer.peek();
+  }
+
+  if (t === undefined) {
+    throw { continuationPrompt: '~ ' };
+  }
+
+  this.tokenizer.consume();
+  t = this.tokenizer.peek();
+
+  // check for @base after array literal
+  var base = 0;
+  if (t != undefined && t.type == token_ns.Enum.AT_SIGN) {
+    this.tokenizer.consume();
+
+    // if the next token is a word and is numeric, treat it as the base,
+    // otherwise the base is 0
+    t = this.tokenizer.peek();
+    if (t != undefined && t.type == token_ns.Enum.WORD) {
+      e = new Word(t.lexeme);
+      if (e.isNumeric()) {
+        base = e.jvalue;
+      }
+    }
+  }
+
+  return new LArray(datums, base);
 };
 
 //------------------------------------------------------------------------------

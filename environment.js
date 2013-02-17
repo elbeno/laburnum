@@ -43,12 +43,19 @@ Environment.prototype.lookupVariable = function(name) {
 //------------------------------------------------------------------------------
 // we can bind functions and variables
 
-Environment.prototype.bindFunction = function(name, arglist, body) {
-  this.functions[name.toLowerCase()] = { 'name':name, 'arglist':arglist, 'body':body };
+Environment.prototype.bindFunction = function(name, arglist, body, src) {
+  this.functions[name.toLowerCase()] = { 'name':name, 'arglist':arglist, 'body':body, src:src };
 };
 
 Environment.prototype.bindVariable = function(name, value) {
   this.variables[name.toLowerCase()] = value;
+};
+
+//------------------------------------------------------------------------------
+// we can bind functions and variables
+
+Environment.prototype.eraseFunction = function(name) {
+  this.functions[name.toLowerCase()] = undefined;
 };
 
 //------------------------------------------------------------------------------
@@ -67,3 +74,6 @@ Environment.prototype.callFunction = function(f, args, extraArgs) {
 
   return f.body.call(undefined, newEnv);
 };
+
+//------------------------------------------------------------------------------
+var globalEnv = new Environment(undefined);

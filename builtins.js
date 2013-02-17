@@ -154,6 +154,35 @@ function Make(env) {
 }
 
 //------------------------------------------------------------------------------
+function Printout(env) {
+  var n = env.lookupVariable('name');
+  if (n.type == 'array') {
+    throw { message: "printout doesn't like " + n.toString() + ' as input' };
+  }
+
+  var f = env.lookupFunction(n.toString());
+  var repl = $('#repl');
+  if (f.src === undefined) {
+    throw { message: "I don't know how to " + n.toString() };
+  }
+  else {
+    repl.val(repl.val() + f.src + '\n');
+  }
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
+function Erase(env) {
+  var n = env.lookupVariable('name');
+  if (n.type == 'array') {
+    throw { message: "erase doesn't like " + n.toString() + ' as input' };
+  }
+
+  globalEnv.eraseFunction(n.toString());
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
 var Sum = function(env) {
   return Reducer(env, function(a, b) {
     if (b.type != 'numeric') {
@@ -176,19 +205,22 @@ var Product = function(env) {
 //------------------------------------------------------------------------------
 function InstallBuiltins(env) {
   // Constructors
-  env.bindFunction('word', ['a', 'b'], BuildWord);
-  env.bindFunction('list', ['a', 'b'], BuildList);
-  env.bindFunction('sentence', ['a', 'b'], Sentence);
-  env.bindFunction('se', ['a', 'b'], Sentence);
-  env.bindFunction('fput', ['car', 'cdr'], FPut);
-  env.bindFunction('lput', ['car', 'cdr'], LPut);
-  env.bindFunction('combine', ['a', 'b'], Combine);
-  env.bindFunction('reverse', ['a'], Reverse);
-  env.bindFunction('gensym', [], Gensym);
+  env.bindFunction('word', ['a', 'b'], BuildWord, 'word is a primitive');
+  env.bindFunction('list', ['a', 'b'], BuildList, 'list is a primitive');
+  env.bindFunction('sentence', ['a', 'b'], Sentence, 'sentence is a primitive');
+  env.bindFunction('se', ['a', 'b'], Sentence, 'se is a primitive');
+  env.bindFunction('fput', ['car', 'cdr'], FPut, 'fput is a primitive');
+  env.bindFunction('lput', ['car', 'cdr'], LPut, 'lput is a primitive');
+  env.bindFunction('combine', ['a', 'b'], Combine, 'combine is a primitive');
+  env.bindFunction('reverse', ['a'], Reverse, 'reverse is a primitive');
+  env.bindFunction('gensym', [], Gensym, 'gensym is a primitive');
 
 
-  env.bindFunction('print', ['arg'], Print);
-  env.bindFunction('make', ['name', 'value'], Make);
-  env.bindFunction('sum', ['a', 'b'], Sum);
-  env.bindFunction('product', ['a', 'b'], Product);
+  env.bindFunction('print', ['arg'], Print, 'print is a primitive');
+  env.bindFunction('make', ['name', 'value'], Make, 'make is a primitive');
+  env.bindFunction('printout', ['name'], Printout, 'printout is a primitive');
+  env.bindFunction('po', ['name'], Printout, 'po is a primitive');
+  env.bindFunction('erase', ['name'], Erase, 'erase is a primitive');
+  env.bindFunction('sum', ['a', 'b'], Sum, 'sum is a primitive');
+  env.bindFunction('product', ['a', 'b'], Product, 'product is a primitive');
 }

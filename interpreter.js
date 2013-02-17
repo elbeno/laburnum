@@ -4,16 +4,32 @@ function Interpreter() {
 
 //------------------------------------------------------------------------------
 Interpreter.prototype.interpret = function(input, env) {
+  this.env = env;
+  this.tokenizer = new Tokenizer();
 
-  // if the line ends with ~ (before the newline), do a continuation
-  if (input.charAt(input.length - 2) == '~') {
-    throw { continuationPrompt: '~ ' };
+  if (/^to\s/i.test(input)) {
+    return this.parseToForm(input, env);
   }
 
-  this.env = env;
-  this.tokenizer = new Tokenizer(input);
+  this.tokenizer.tokenize(this.tokenizer.preprocess(input));
+  return this.toplevel();
+};
 
-  return this.relop();
+//------------------------------------------------------------------------------
+Interpreter.prototype.run = function(tokenstream, env) {
+  this.env = env;
+  this.tokenizer = new Tokenizer();
+  this.tokenizer.tokenqueue = tokenstream;
+  return this.toplevel();
+};
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.toplevel = function() {
+  var e = undefined;
+  while (e === undefined && this.tokenizer.tokenqueue.length > 0) {
+    e = this.relop();
+  }
+  return e;
 };
 
 //------------------------------------------------------------------------------
@@ -346,6 +362,9 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   }
 
   // otherwise do a function call
+  if (name.toLowerCase() == 'to') {
+    // TODO: disallow use of TO
+  }
   var f = this.env.lookupFunction(name);
 
   var args = [];
@@ -376,4 +395,73 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   }
 
   return this.env.callFunction(f, args, extraArgs);
+};
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.parseToForm = function(input, env) {
+
+  // store the source for printout (with only > prompts removed)
+  var src = input.replace(/\n> /g, '\n');
+
+  // replace any > continuations and split into lines
+  var lines = this.tokenizer.preprocess(input).replace(/\n> /g, '\n').split('\n');
+  // the last line is empty
+  lines.pop();
+
+  // first line is TO name arg1 arg2 ...
+  this.tokenizer.tokenize(lines[0]);
+  // throw away the TO
+  this.tokenizer.consume();
+
+  // the next lexeme is the function name: it must not be numeric (although it
+  // can be a boolean lexeme)
+  var t = this.tokenizer.consume();
+  if (t === undefined) {
+    throw { message: 'not enough inputs to to' };
+  }
+  var e = new Word(t.lexeme);
+  if (e.type == 'numeric') {
+    throw { message: "to doesn't like " + t.lexeme + ' as input' };
+  }
+  var funcName = t.lexeme;
+  try {
+    env.lookupFunction(funcName);
+    throw { message: funcName  + ' is already defined', rethrow:true };
+  }
+  catch (e) {
+    if (e.rethrow) {
+      throw e;
+    }
+  }
+
+  // now, if we don't have end on the last line, we can early-out
+  if (!/^end$/i.test(lines[lines.length - 1])) {
+    throw { continuationPrompt: '> ' };
+  }
+
+  // any other tokens are parameter names. They may be appended with :
+  var args = [];
+  t = this.tokenizer.consume();
+  while (t != undefined) {
+    if (t.type != token_ns.Enum.COLON) {
+      e = new Word(t.lexeme);
+      if (e.type == 'numeric') {
+        throw { message: "to doesn't like " + t.lexeme + ' as input' };
+      }
+      args.push(t.lexeme);
+    }
+    t = this.tokenizer.consume();
+  }
+
+  // drop the TO and END lines, join and tokenize
+  lines.shift();
+  lines.pop();
+  this.tokenizer.tokenize(lines.join('\n'));
+  var tokenstream = this.tokenizer.tokenqueue;
+
+  // bind this function in the global env
+  globalEnv.bindFunction(funcName, args, function(env) {
+    var terp = new Interpreter();
+    return terp.run(tokenstream.slice(0), env);
+  }, src);
 };

@@ -42,8 +42,6 @@ $.fn.scrollToEnd = function() {
 
 var welcomeMessage = 'Welcome!\n';
 var expressionIndex = 0;
-
-var globalEnv = new Environment(undefined);
 InstallBuiltins(globalEnv);
 
 // Display a prompt and optional msg
@@ -110,6 +108,11 @@ $(function() {
       var input = $(this).val().substring(promptPos);
 
       try {
+        // if the line ends with ~ (before the newline), do a continuation
+        if (input[input.length - 2] == '~') {
+          throw { continuationPrompt: '~ ' };
+        }
+
         var terp = new Interpreter();
         var e = terp.interpret(input, globalEnv);
 

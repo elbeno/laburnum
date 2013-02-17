@@ -17,92 +17,87 @@ token_ns.Enum = {
   AT_SIGN:12
 };
 
-function Token(type, lexeme) {
-  this.type = type;
-  this.lexeme = lexeme;
+//------------------------------------------------------------------------------
+function Tokenizer() {
 }
 
-Token.prototype.toString = function() {
-  return String(this.type) + ' ' + this.lexeme;
-};
-
 //------------------------------------------------------------------------------
-function Tokenizer(input) {
-
+Tokenizer.prototype.preprocess = function(input) {
   // replace any continuation prompts
-  var s = input.replace(/(\n~ |\n\| |\n\\ |\n> )/g, '\n');
+  var s = input.replace(/(\n~ |\n\| |\n\\ )/g, '\n');
 
   // get rid of comments (but leave tildes at end)
   s = s.replace(/;[^\n~]*\n/g, '\n');
   s = s.replace(/;[^\n~]*~\n/g, '~\n');
+  s = s.replace(/;[^\n~]*$/g, '');
 
   // elide any ~ continuation lines
   s = s.replace(/~\n/g, '');
 
-  // the result of tokenizing
-  this.tokenqueue = [];
-  this.tokenize(s, 0);
-}
+  return s;
+};
 
 //------------------------------------------------------------------------------
-Tokenizer.prototype.tokenize = function(s, startIndex) {
+Tokenizer.prototype.tokenize = function(s) {
+  var startIndex = 0;
+  this.tokenqueue = [];
 
   while (startIndex < s.length)
   {
-    var c = s.charAt(startIndex);
+    var c = s[startIndex];
     var c2;
     switch (c) {
 
     case '[': // begin list
-      this.tokenqueue.push(new Token(token_ns.Enum.LEFT_SQUARE_BRACKET, c));
+      this.tokenqueue.push({type:token_ns.Enum.LEFT_SQUARE_BRACKET, lexeme:c});
       startIndex = this.tokenizeList(s, ++startIndex,
-                                     new Token(token_ns.Enum.RIGHT_SQUARE_BRACKET, ']'));
+                                    {type:token_ns.Enum.RIGHT_SQUARE_BRACKET, lexeme:']'});
       break;
 
     case '{': // begin array
-      this.tokenqueue.push(new Token(token_ns.Enum.LEFT_CURLY_BRACKET, c));
+      this.tokenqueue.push({type:token_ns.Enum.LEFT_CURLY_BRACKET, lexeme:c});
       startIndex = this.tokenizeList(s, ++startIndex,
-                                     new Token(token_ns.Enum.RIGHT_CURLY_BRACKET, '}'));
+                                     {type:token_ns.Enum.RIGHT_CURLY_BRACKET, lexeme:'}'});
       break;
 
     case '@': // array base
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.AT_SIGN, c));
+      this.tokenqueue.push({type:token_ns.Enum.AT_SIGN, lexeme:c});
       break;
 
     case '(':
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.LEFT_PAREN, c));
+      this.tokenqueue.push({type:token_ns.Enum.LEFT_PAREN, lexeme:c});
       break;
 
     case ')':
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.RIGHT_PAREN, c));
+      this.tokenqueue.push({type:token_ns.Enum.RIGHT_PAREN, lexeme:c});
       break;
 
     case '=':
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.RELOP, c));
+      this.tokenqueue.push({type:token_ns.Enum.RELOP, lexeme:c});
       break;
 
     case '<': // could be < or <= or <>
       ++startIndex;
       if (startIndex < s.length) {
-        c2 = s.charAt(startIndex);
+        c2 = s[startIndex];
         if (c2 == '=' || c2 == '>') {
           c = c + c2;
         }
       }
-      this.tokenqueue.push(new Token(token_ns.Enum.RELOP, c));
+      this.tokenqueue.push({type:token_ns.Enum.RELOP, lexeme:c});
       startIndex += c.length - 1;
       break;
 
     case '>': // could be > or >=
       ++startIndex;
-      if (startIndex < s.length && s.charAt(startIndex) == '=') {
+      if (startIndex < s.length && s[startIndex] == '=') {
         c = c + '=';
       }
-      this.tokenqueue.push(new Token(token_ns.Enum.RELOP, c));
+      this.tokenqueue.push({type:token_ns.Enum.RELOP, lexeme:c});
       startIndex += c.length - 1;
       break;
 
@@ -110,24 +105,24 @@ Tokenizer.prototype.tokenize = function(s, startIndex) {
     case '/':
     case '%':
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.MULOP, c));
+      this.tokenqueue.push({type:token_ns.Enum.MULOP, lexeme:c});
       break;
 
     case '+':
     case '-':
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.ADDOP, c));
+      this.tokenqueue.push({type:token_ns.Enum.ADDOP, lexeme:c});
       break;
 
     case '"': // quote word
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.QUOTE, c));
+      this.tokenqueue.push({type:token_ns.Enum.QUOTE, lexeme:c});
       startIndex = this.tokenizeWord(s, startIndex, /[\s\[\]\(\)\{\}]/);
       break;
 
     case ':': // contents of word
       ++startIndex;
-      this.tokenqueue.push(new Token(token_ns.Enum.COLON, c));
+      this.tokenqueue.push({type:token_ns.Enum.COLON, lexeme:c});
       startIndex = this.tokenizeWord(s, startIndex, /[\s\[\]\(\)\{\}\+\-\*\/=<>]/);
       break;
 
@@ -152,21 +147,21 @@ Tokenizer.prototype.tokenizeList = function(s, startIndex, endToken) {
       return ++startIndex;
     }
 
-    switch (s.charAt(startIndex)) {
+    switch (s[startIndex]) {
     case '[': // left square bracket - begin new list
-      this.tokenqueue.push(new Token(token_ns.Enum.LEFT_SQUARE_BRACKET, '['));
+      this.tokenqueue.push({type:token_ns.Enum.LEFT_SQUARE_BRACKET, lexeme:'['});
       startIndex = this.tokenizeList(s, ++startIndex,
-                                     new Token(token_ns.Enum.RIGHT_SQUARE_BRACKET, ']'));
+                                     {type:token_ns.Enum.RIGHT_SQUARE_BRACKET, lexeme:']'});
       break;
 
     case '{': // left curly bracket - begin new array
-      this.tokenqueue.push(new Token(token_ns.Enum.LEFT_CURLY_BRACKET, '{'));
+      this.tokenqueue.push({type:token_ns.Enum.LEFT_CURLY_BRACKET, lexeme:'{'});
       startIndex = this.tokenizeList(s, ++startIndex,
-                                     new Token(token_ns.Enum.RIGHT_CURLY_BRACKET, '}'));
+                                     {type:token_ns.Enum.RIGHT_CURLY_BRACKET, lexeme:'}'});
       break;
 
     default:
-      var c = s.charAt(startIndex);
+      var c = s[startIndex];
       if (!/\s/.test(c)) {
         startIndex = this.tokenizeWord(s, startIndex, /[\s\[\]\{\}]/);
       }
@@ -186,14 +181,14 @@ Tokenizer.prototype.tokenizeWord = function(s, startIndex, delimiters) {
   var barred = false;
   while (startIndex < s.length)
   {
-    var c = s.charAt(startIndex);
+    var c = s[startIndex];
 
     if (c == '\\') {
       ++startIndex;
       if (startIndex == s.length) {
         throw { continuationPrompt: '\\ ' };
       }
-      c = s.charAt(startIndex);
+      c = s[startIndex];
       // if the last character is a \ we just escaped the newline and should continue
       if (c == '\n' && startIndex == s.length - 1) {
         throw { continuationPrompt: '\\ ' };
@@ -211,7 +206,7 @@ Tokenizer.prototype.tokenizeWord = function(s, startIndex, delimiters) {
         lexeme = lexeme + c;
       }
       else {
-        this.tokenqueue.push(new Token(token_ns.Enum.WORD, lexeme));
+        this.tokenqueue.push({type:token_ns.Enum.WORD, lexeme:lexeme});
         return startIndex;
       }
     }
@@ -222,7 +217,7 @@ Tokenizer.prototype.tokenizeWord = function(s, startIndex, delimiters) {
     throw { continuationPrompt: '| ' };
   }
 
-  this.tokenqueue.push(new Token(token_ns.Enum.WORD, lexeme));
+  this.tokenqueue.push({type:token_ns.Enum.WORD, lexeme:lexeme});
   return startIndex;
 }
 

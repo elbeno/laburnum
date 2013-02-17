@@ -2,7 +2,7 @@
 function Word(value) {
   this.value = value.toString();
 
-  if (this.value.charAt(0) == '|' && this.value.charAt(value.length-1) == '|') {
+  if (this.value[0] == '|' && this.value[value.length-1] == '|') {
     this.value = this.value.substring(1, value.length-1);
   }
 

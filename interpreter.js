@@ -46,10 +46,10 @@ Interpreter.prototype.relop = function() {
     }
 
     if (!lhs.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + lhs.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + lhs.toString() + ' as input' };
     }
     if (!rhs.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + rhs.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + rhs.toString() + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -85,10 +85,10 @@ Interpreter.prototype.addop = function() {
     }
 
     if (!lhs.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + lhs.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + lhs.toString() + ' as input' };
     }
     if (!rhs.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + rhs.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + rhs.toString() + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -120,10 +120,10 @@ Interpreter.prototype.mulop = function() {
     }
 
     if (!lhs.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + lhs.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + lhs.toString() + ' as input' };
     }
     if (!rhs.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + rhs.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + rhs.toString() + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -155,7 +155,7 @@ Interpreter.prototype.unaryop = function() {
       throw { message: "Not enough inputs to " + t.lexeme };
     }
     if (!e.isNumeric()) {
-      throw { message: t.lexeme + " doesn't like " + e.value + ' as input' };
+      throw { message: t.lexeme + " doesn't like " + e.toString() + ' as input' };
     }
 
     switch (t.lexeme) {
@@ -394,7 +394,17 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
     this.tokenizer.consume();
   }
 
-  return this.env.callFunction(f, args, extraArgs);
+  try {
+    return this.env.callFunction(f, args, extraArgs);
+  }
+  catch (e) {
+    // if the message starts with the function name, don't add it
+    var re = new RegExp('^' + name + ' ');
+    if (re.test(e.message)) {
+      throw e;
+    }
+    throw { message: e.message + ' in ' + name };
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -420,10 +430,12 @@ Interpreter.prototype.parseToForm = function(input, env) {
     throw { message: 'not enough inputs to to' };
   }
   var e = new Word(t.lexeme);
-  if (e.type == 'numeric') {
-    throw { message: "to doesn't like " + t.lexeme + ' as input' };
+  if (e.isNumeric()) {
+    throw { message: "to doesn't like " + e.toString() + ' as input' };
   }
   var funcName = t.lexeme;
+
+  // deal with redefinition of function
   try {
     env.lookupFunction(funcName);
     throw { message: funcName  + ' is already defined', rethrow:true };
@@ -445,8 +457,8 @@ Interpreter.prototype.parseToForm = function(input, env) {
   while (t != undefined) {
     if (t.type != token_ns.Enum.COLON) {
       e = new Word(t.lexeme);
-      if (e.type == 'numeric') {
-        throw { message: "to doesn't like " + t.lexeme + ' as input' };
+      if (e.isNumeric()) {
+        throw { message: "to doesn't like " + e.toString() + ' as input' };
       }
       args.push(t.lexeme);
     }

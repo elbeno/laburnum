@@ -1,4 +1,33 @@
 //------------------------------------------------------------------------------
+function Datum() {
+}
+
+//------------------------------------------------------------------------------
+Datum.prototype.isNumeric = function() {
+  return this.type == 'numeric';
+};
+
+//------------------------------------------------------------------------------
+Datum.prototype.isBoolean = function() {
+  return this.type == 'boolean';
+};
+
+//------------------------------------------------------------------------------
+Datum.prototype.isWord = function() {
+  return this.type != 'list' && this.type != 'array';
+};
+
+//------------------------------------------------------------------------------
+Datum.prototype.isList = function() {
+  return this.type == 'list';
+};
+
+//------------------------------------------------------------------------------
+Datum.prototype.isArray = function() {
+  return this.type == 'array';
+};
+
+//------------------------------------------------------------------------------
 function Word(value) {
   this.value = value.toString();
 
@@ -28,15 +57,7 @@ function Word(value) {
   this.type = 'word';
 }
 
-//------------------------------------------------------------------------------
-Word.prototype.isNumeric = function() {
-  return this.type == 'numeric';
-};
-
-//------------------------------------------------------------------------------
-Word.prototype.isBoolean = function() {
-  return this.type == 'boolean';
-};
+Word.prototype = new Datum();
 
 //------------------------------------------------------------------------------
 Word.prototype.toString = function(delimeters) {
@@ -57,10 +78,14 @@ function List(values) {
   this.value = this.toBareString();
 }
 
+List.prototype = new Datum();
+
+//------------------------------------------------------------------------------
 List.prototype.toBareString = function() {
   return this.values.map(function(x) { return x.toString(/[\s\[\]]/); }).join(' ');
 };
 
+//------------------------------------------------------------------------------
 List.prototype.toString = function() {
   return '[' + this.toBareString() + ']';
 };
@@ -69,10 +94,13 @@ List.prototype.toString = function() {
 function LArray(values, base) {
   this.type = 'array';
   this.values = values;
-  this.base = base;
+  this.origin = base;
   this.value = this.toString();
 }
 
+LArray.prototype = new Datum();
+
+//------------------------------------------------------------------------------
 LArray.prototype.toString = function() {
   return '{' + this.values.map(function(x) { return x.toString(/[\s\[\]\{\}]/); }).join(' ') + '}';
 };

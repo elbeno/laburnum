@@ -104,3 +104,16 @@ LArray.prototype = new Datum();
 LArray.prototype.toString = function() {
   return '{' + this.values.map(function(x) { return x.toString(/[\s\[\]\{\}]/); }).join(' ') + '}';
 };
+
+//------------------------------------------------------------------------------
+LArray.prototype.computeIndex = function(index, err) {
+  if (index < this.origin || (index  - this.origin) >= this.values.length) {
+    throw err;
+  }
+  return index - this.origin;
+};
+
+//------------------------------------------------------------------------------
+LArray.prototype.atIndex = function(index, err) {
+  return this.values[this.computeIndex(index, err)];
+};

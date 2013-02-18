@@ -335,7 +335,8 @@ Interpreter.prototype.arrayexpr = function() {
   t = this.tokenizer.peek();
 
   // check for @base after array literal
-  var base = 0;
+  // In Logo, data structures are 1-based.
+  var base = 1;
   if (t != undefined && t.type == token_ns.Enum.AT_SIGN) {
     this.tokenizer.consume();
 
@@ -371,7 +372,7 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   for (var i = 0; i < f.arglist.length; ++i) {
     var e = this.relop();
     if (e === undefined) {
-      throw 'not enough inputs to ' + name;
+      throw { message: 'not enough inputs to ' + name };
     }
     args.push(e);
   }
@@ -395,7 +396,9 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   }
 
   try {
-    return this.env.callFunction(f, args, extraArgs);
+    // we pass the name of the function as typed here, so that errors can be
+    // friendly
+    return this.env.callFunction(name, f, args, extraArgs);
   }
   catch (e) {
     // if the message starts with the function name, don't add it

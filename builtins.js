@@ -181,20 +181,158 @@ function Gensym(env) {
 // Selectors
 
 //------------------------------------------------------------------------------
-function First(env) {
-  var a = env.lookupVariable('a');
+function FirstInternal(a, name) {
   if (a.isWord()) {
+    if (a.value.length == 0) {
+      throw { message: name + " doesn't like " + a.toString() + ' as input' };
+    }
     return new Word(a.value[0]);
   }
   else if (a.isList()) {
     if (a.values.length == 0) {
-      throw { message: "first doesn't like " + a.toString() + ' as input' };
+      throw { message: name + " doesn't like " + a.toString() + ' as input' };
     }
     return a.values[0];
   }
   else {
     return new Word(a.origin);
   }
+}
+
+//------------------------------------------------------------------------------
+function First(env) {
+  var a = env.lookupVariable('a');
+  return FirstInternal(a, 'first');
+}
+
+//------------------------------------------------------------------------------
+function Firsts(env) {
+  var a = env.lookupVariable('a');
+  if (!a.isList()) {
+    throw { message: "firsts doesn't like " + a.toString() + ' as input' };
+  }
+
+  var datums = a.values.map(function(x) {
+    return FirstInternal(x, 'firsts');
+  });
+
+  return new List(datums);
+}
+
+//------------------------------------------------------------------------------
+function Last(env) {
+  var a = env.lookupVariable('a');
+  if (a.isWord() && a.value.length > 0) {
+    return new Word(a.value[a.value.length - 1]);
+  }
+  else if (a.isList() && a.values.length != 0) {
+    return a.values[a.values.length - 1];
+  }
+  throw { message: "last doesn't like " + a.toString() + ' as input' };
+}
+
+//------------------------------------------------------------------------------
+function ButFirstInternal(a, name) {
+  if (a.isWord()) {
+    if (a.value.length == 0) {
+      throw { message: name + " doesn't like " + a.toString() + ' as input' };
+    }
+    return new Word(a.value.substring(1));
+  }
+  else if (a.isList()) {
+    if (a.values.length == 0) {
+      throw { message: name + " doesn't like " + a.toString() + ' as input' };
+    }
+    return new List(a.values.slice(1));
+  }
+  else {
+    throw { message: name + " doesn't like " + a.toString() + ' as input' };
+  }
+}
+
+//------------------------------------------------------------------------------
+function ButFirst(env, name) {
+  var a = env.lookupVariable('a');
+  return ButFirstInternal(a, name);
+}
+
+//------------------------------------------------------------------------------
+function ButFirsts(env, name) {
+  var a = env.lookupVariable('a');
+  if (!a.isList()) {
+    throw { message: name + " doesn't like " + a.toString() + ' as input' };
+  }
+
+  var datums = a.values.map(function(x) {
+    return ButFirstInternal(x, name);
+  });
+
+  return new List(datums);
+}
+
+//------------------------------------------------------------------------------
+function ButLast(env, name) {
+  var a = env.lookupVariable('a');
+  if (a.isWord() && a.value.length > 0) {
+    return new Word(a.value.substring(0, a.value.length - 1));
+  }
+  else if (a.isList() && a.values.length != 0) {
+    return new List(a.values.slice(0, a.values.length - 1));
+  }
+  throw { message: name + " doesn't like " + a.toString() + ' as input' };
+}
+
+//------------------------------------------------------------------------------
+function Item(env) {
+  var i = env.lookupVariable('i');
+  if (!i.isNumeric()) {
+    throw { message: "item doesn't like " + i.toString() + ' as input' };
+  }
+
+  var a = env.lookupVariable('a');
+
+  // In Logo, data structures are 1-based.
+  var idx = i.jvalue - 1;
+
+  if (a.isWord()) {
+    if (idx >= 0 && a.value.length > idx) {
+      return new Word(a.value[idx]);
+    }
+    throw { message: "item doesn't like " + i.toString() + ' as input' };
+  }
+  else if (a.isList()) {
+    if (idx >= 0 && a.values.length > idx) {
+      return a.values[idx];
+    }
+    throw { message: "item doesn't like " + i.toString() + ' as input' };
+  }
+  else if (a.isArray()) {
+    // Arrays have an arbitrary base, so use the actual index value.
+    return a.atIndex(i.jvalue, { message: "item doesn't like " + i.toString() + ' as input' });
+  }
+
+  throw { message: "item doesn't like " + a.toString() + ' as input' };
+}
+
+//------------------------------------------------------------------------------
+function SetItem(env) {
+  var i = env.lookupVariable('i');
+  if (!i.isNumeric()) {
+    throw { message: "setitem doesn't like " + i.toString() + ' as input' };
+  }
+
+  var a = env.lookupVariable('a');
+  if (!a.isArray()) {
+    throw { message: "setitem doesn't like " + a.toString() + ' as input' };
+  }
+
+  var v = env.lookupVariable('v');
+
+  // TODO: check for circular refs
+
+  a.values[a.computeIndex(i.jvalue,
+                          { message: "setitem doesn't like " + i.toString() + ' as input' })] = v;
+  a.value = a.toString();
 }
 
 //------------------------------------------------------------------------------
@@ -211,8 +349,6 @@ function Print(env) {
 
   var repl = $('#repl');
   repl.val(repl.val() + s + '\n');
-
-  return undefined;
 }
 
 //------------------------------------------------------------------------------
@@ -221,15 +357,13 @@ function Make(env) {
   var v = env.lookupVariable('value');
 
   globalEnv.bindVariable(n.value, v);
-
-  return undefined;
 }
 
 //------------------------------------------------------------------------------
-function Printout(env) {
+function Printout(env, name) {
   var n = env.lookupVariable('name');
   if (n.type == 'array') {
-    throw { message: "printout doesn't like " + n.toString() + ' as input' };
+    throw { message: name + " doesn't like " + n.toString() + ' as input' };
   }
 
   var f = env.lookupFunction(n.toString());
@@ -237,10 +371,12 @@ function Printout(env) {
   if (f.src === undefined) {
     throw { message: "I don't know how to " + n.toString() };
   }
-  else {
+  else if (f.src != '') {
     repl.val(repl.val() + f.src + '\n');
   }
-  return undefined;
+  else {
+    repl.val(repl.val() + name + ' is a primitive\n');
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -251,7 +387,6 @@ function Erase(env) {
   }
 
   globalEnv.eraseFunction(n.toString());
-  return undefined;
 }
 
 //------------------------------------------------------------------------------
@@ -277,28 +412,42 @@ var Product = function(env) {
 //------------------------------------------------------------------------------
 function InstallBuiltins(env) {
   // Constructors
-  env.bindFunction('word', ['a', 'b'], BuildWord, 'word is a primitive');
-  env.bindFunction('list', ['a', 'b'], BuildList, 'list is a primitive');
-  env.bindFunction('sentence', ['a', 'b'], Sentence, 'sentence is a primitive');
-  env.bindFunction('se', ['a', 'b'], Sentence, 'se is a primitive');
-  env.bindFunction('fput', ['car', 'cdr'], FPut, 'fput is a primitive');
-  env.bindFunction('lput', ['car', 'cdr'], LPut, 'lput is a primitive');
-  env.bindFunction('array', ['size'], MakeArray, 'array is a primitive');
-  //env.bindFunction('mdarray', ['sizelist'], MDArray, 'mdarray is a primitive');
-  env.bindFunction('listtoarray', ['list'], ListToArray, 'listtoarray is a primitive');
-  env.bindFunction('arraytolist', ['array'], ArrayToList, 'arraytolist is a primitive');
-  env.bindFunction('combine', ['a', 'b'], Combine, 'combine is a primitive');
-  env.bindFunction('reverse', ['a'], Reverse, 'reverse is a primitive');
-  env.bindFunction('gensym', [], Gensym, 'gensym is a primitive');
+  env.bindFunction('word', ['a', 'b'], BuildWord, '');
+  env.bindFunction('list', ['a', 'b'], BuildList, '');
+  env.bindFunction('sentence', ['a', 'b'], Sentence, '');
+  env.bindFunction('se', ['a', 'b'], Sentence, '');
+  env.bindFunction('fput', ['car', 'cdr'], FPut, '');
+  env.bindFunction('lput', ['car', 'cdr'], LPut, '');
+  env.bindFunction('array', ['size'], MakeArray, '');
+  // TODO: mdarray library function
+  env.bindFunction('listtoarray', ['list'], ListToArray, '');
+  env.bindFunction('arraytolist', ['array'], ArrayToList, '');
+  // TODO: the next 3 should be library functions
+  env.bindFunction('combine', ['a', 'b'], Combine, '');
+  env.bindFunction('reverse', ['a'], Reverse, '');
+  env.bindFunction('gensym', [], Gensym, '');
 
   // Selectors
-  env.bindFunction('first', ['a'], First, 'first is a primitive');
+  env.bindFunction('first', ['a'], First, '');
+  env.bindFunction('firsts', ['a'], Firsts, '');
+  env.bindFunction('last', ['a'], Last, '');
+  env.bindFunction('butfirst', ['a'], ButFirst, '');
+  env.bindFunction('bf', ['a'], ButFirst, '');
+  env.bindFunction('butfirsts', ['a'], ButFirsts, '');
+  env.bindFunction('bfs', ['a'], ButFirsts, '');
+  env.bindFunction('butlast', ['a'], ButLast, '');
+  env.bindFunction('bl', ['a'], ButLast, '');
+  env.bindFunction('item', ['i', 'a'], Item, '');
+  // TODO: mditem, pick, remove, remdup, quoted (library functions)
 
-  env.bindFunction('print', ['arg'], Print, 'print is a primitive');
-  env.bindFunction('make', ['name', 'value'], Make, 'make is a primitive');
-  env.bindFunction('printout', ['name'], Printout, 'printout is a primitive');
-  env.bindFunction('po', ['name'], Printout, 'po is a primitive');
-  env.bindFunction('erase', ['name'], Erase, 'erase is a primitive');
-  env.bindFunction('sum', ['a', 'b'], Sum, 'sum is a primitive');
-  env.bindFunction('product', ['a', 'b'], Product, 'product is a primitive');
+  // Mutators
+  env.bindFunction('setitem', ['i', 'a', 'v'], SetItem, '');
+
+  env.bindFunction('print', ['arg'], Print, '');
+  env.bindFunction('make', ['name', 'value'], Make, '');
+  env.bindFunction('printout', ['name'], Printout, '');
+  env.bindFunction('po', ['name'], Printout, '');
+  env.bindFunction('erase', ['name'], Erase, '');
+  env.bindFunction('sum', ['a', 'b'], Sum, '');
+  env.bindFunction('product', ['a', 'b'], Product, '');
 }

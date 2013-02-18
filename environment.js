@@ -61,7 +61,7 @@ Environment.prototype.eraseFunction = function(name) {
 //------------------------------------------------------------------------------
 // we can call functions
 
-Environment.prototype.callFunction = function(f, args, extraArgs) {
+Environment.prototype.callFunction = function(name, f, args, extraArgs) {
   var newEnv = new Environment(this);
 
   for (var i = 0; i < f.arglist.length; ++i) {
@@ -72,7 +72,7 @@ Environment.prototype.callFunction = function(f, args, extraArgs) {
     newEnv.bindVariable('[rest]', new List(extraArgs));
   }
 
-  return f.body.call(undefined, newEnv);
+  return f.body.call(undefined, newEnv, name);
 };
 
 //------------------------------------------------------------------------------

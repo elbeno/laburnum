@@ -42,7 +42,6 @@ $.fn.scrollToEnd = function() {
 
 var welcomeMessage = 'Welcome!\n';
 var expressionIndex = 0;
-InstallBuiltins(globalEnv);
 
 // Display a prompt and optional msg
 function displayPrompt(target, msg)

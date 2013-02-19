@@ -451,3 +451,5 @@ function InstallBuiltins(env) {
   env.bindFunction('sum', ['a', 'b'], Sum, '');
   env.bindFunction('product', ['a', 'b'], Product, '');
 }
+
+InstallBuiltins(globalEnv);

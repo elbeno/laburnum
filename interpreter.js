@@ -42,7 +42,8 @@ Interpreter.prototype.relop = function() {
     var rhs = this.addop();
 
     if (rhs === undefined) {
-      throw { message: "Not enough inputs to " + t.lexeme };
+      throw { message: "Not enough inputs to " + t.lexeme,
+              continuationPrompt: '~ '};
     }
 
     if (!lhs.isNumeric()) {
@@ -81,7 +82,8 @@ Interpreter.prototype.addop = function() {
     var rhs = this.mulop();
 
     if (rhs === undefined) {
-      throw { message: "Not enough inputs to " + t.lexeme };
+      throw { message: "Not enough inputs to " + t.lexeme,
+              continuationPrompt: '~ '};
     }
 
     if (!lhs.isNumeric()) {
@@ -116,7 +118,8 @@ Interpreter.prototype.mulop = function() {
     var rhs = this.unaryop();
 
     if (rhs === undefined) {
-      throw { message: "Not enough inputs to " + t.lexeme };
+      throw { message: "Not enough inputs to " + t.lexeme,
+              continuationPrompt: '~ '};
     }
 
     if (!lhs.isNumeric()) {
@@ -152,7 +155,8 @@ Interpreter.prototype.unaryop = function() {
     var e = this.expr();
 
     if (e === undefined) {
-      throw { message: "Not enough inputs to " + t.lexeme };
+      throw { message: "Not enough inputs to " + t.lexeme,
+              continuationPrompt: '~ '};
     }
     if (!e.isNumeric()) {
       throw { message: t.lexeme + " doesn't like " + e.toString() + ' as input' };
@@ -364,7 +368,7 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
 
   // otherwise do a function call
   if (name.toLowerCase() == 'to') {
-    // TODO: disallow use of TO
+    // TODO: disallow use of TO (or allow nested?)
   }
   var f = this.env.lookupFunction(name);
 

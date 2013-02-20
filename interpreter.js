@@ -63,9 +63,11 @@ Interpreter.prototype.relop = function() {
     case '<=':
       return new Word(lhs.jvalue <= rhs.jvalue);
     case '<>':
-      return new Word(lhs.jvalue != rhs.jvalue);
+      var f = this.env.lookupFunction('<>');
+      return this.env.callFunction('<>', f, [lhs, rhs]);
     case '=':
-      return new Word(lhs.jvalue == rhs.jvalue);
+      f = this.env.lookupFunction('=');
+      return this.env.callFunction('=', f, [lhs, rhs]);
     }
   }
 

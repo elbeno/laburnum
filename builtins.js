@@ -15,7 +15,6 @@ function Reducer(env, f, init) {
 
 //------------------------------------------------------------------------------
 // Constructors
-
 //------------------------------------------------------------------------------
 var BuildWord = function(env) {
   return Reducer(env, function(a, b) {
@@ -179,7 +178,6 @@ function Gensym(env) {
 
 //------------------------------------------------------------------------------
 // Selectors
-
 //------------------------------------------------------------------------------
 function FirstInternal(a, name) {
   if (a.isWord()) {
@@ -315,6 +313,8 @@ function Item(env) {
 }
 
 //------------------------------------------------------------------------------
+// Mutators
+//------------------------------------------------------------------------------
 function SetItem(env) {
   var i = env.lookupVariable('i');
   if (!i.isNumeric()) {
@@ -336,6 +336,76 @@ function SetItem(env) {
 }
 
 //------------------------------------------------------------------------------
+// Predicates
+//------------------------------------------------------------------------------
+var WordP = function(env) {
+  var a = env.lookupVariable('a');
+  return new Word(a.isWord().toString());
+};
+
+//------------------------------------------------------------------------------
+var ListP = function(env) {
+  var a = env.lookupVariable('a');
+  return new Word(a.isList().toString());
+};
+
+//------------------------------------------------------------------------------
+var ArrayP = function(env) {
+  var a = env.lookupVariable('a');
+  return new Word(a.isArray().toString());
+};
+
+//------------------------------------------------------------------------------
+var EmptyP = function(env) {
+  var a = env.lookupVariable('a');
+  var empty = a.value == '' || (a.isArray() && a.value == '{}');
+  return new Word(empty.toString());
+};
+
+//------------------------------------------------------------------------------
+var EqualPInternal = function(a, b) {
+  if (a.type != b.type) {
+    return false;
+  }
+
+  if (a.isNumeric() || a.isBoolean()) {
+    return a.jvalue == b.jvalue;
+  }
+  else if (a.isWord()) {
+    // TODO: CASEIGNOREDP
+    return a.value == b.value;
+  }
+  else if (a.isList()) {
+    for (var i = 0; i < a.values.length; ++i) {
+      if (i >= b.values.length || !EqualPInternal(a.values[i], b.values[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  else if (a.isArray()) {
+    // TODO: array references
+    return false;
+  }
+
+  return false;
+}
+
+var EqualP = function(env) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
+
+  return new Word(EqualPInternal(a, b).toString());
+};
+
+var NotEqualP = function(env) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
+
+  return new Word((!EqualPInternal(a, b)).toString());
+};
+
+//------------------------------------------------------------------------------
 function Print(env) {
   var a = env.lookupVariable('arg');
 
@@ -352,11 +422,72 @@ function Print(env) {
 }
 
 //------------------------------------------------------------------------------
-function Make(env) {
+// Variable definition
+//------------------------------------------------------------------------------
+function Make(env, name) {
   var n = env.lookupVariable('name');
-  var v = env.lookupVariable('value');
 
-  globalEnv.bindVariable(n.value, v);
+  if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
+    throw { message: name + " doesn't like " + n.toString() + ' as input' };
+  }
+
+  var v = env.lookupVariable('value');
+  env.assignVariable(n.value, v);
+}
+
+//------------------------------------------------------------------------------
+function LocalInternal(env, name, defEnv) {
+  var n = env.lookupVariable('name');
+
+  var args = [];
+  if (n.isList()) {
+    args = n.values;
+  } else {
+    args = [n];
+  }
+  var rest = env.lookupVariable('[rest]');
+  if (rest != undefined) {
+    args = args.concat(rest.values);
+  }
+
+  args.map(function(n) {
+    if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
+      throw { message: name + " doesn't like " + n.toString() + ' as input' };
+    }
+    defEnv.bindVariable(n.value, new Datum());
+  });
+}
+
+//------------------------------------------------------------------------------
+function Local(env, name) {
+  LocalInternal(env, name, env);
+}
+
+//------------------------------------------------------------------------------
+function LocalMake(env) {
+  var n = env.lookupVariable('name');
+
+  if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
+    throw { message: "localmake doesn't like " + n.toString() + ' as input' };
+  }
+
+  var v = env.lookupVariable('value');
+  env.bindVariable(n.value, v);
+}
+
+//------------------------------------------------------------------------------
+function Thing(env) {
+  var n = env.lookupVariable('name');
+  var e = env.lookupVariable(n.value);
+  if (e === undefined || e.type === undefined) {
+    throw { message: n.toString() + ' has no value' };
+  }
+  return e;
+}
+
+//------------------------------------------------------------------------------
+function Global(env, name) {
+  LocalInternal(env, name, globalEnv);
 }
 
 //------------------------------------------------------------------------------
@@ -443,8 +574,31 @@ function InstallBuiltins(env) {
   // Mutators
   env.bindFunction('setitem', ['i', 'a', 'v'], SetItem, '');
 
-  env.bindFunction('print', ['arg'], Print, '');
+  // Predicates
+  env.bindFunction('wordp', ['a'], WordP, '');
+  env.bindFunction('word?', ['a'], WordP, '');
+  env.bindFunction('listp', ['a'], ListP, '');
+  env.bindFunction('list?', ['a'], ListP, '');
+  env.bindFunction('arrayp', ['a'], ArrayP, '');
+  env.bindFunction('array?', ['a'], ArrayP, '');
+  env.bindFunction('emptyp', ['a'], EmptyP, '');
+  env.bindFunction('empty?', ['a'], EmptyP, '');
+  env.bindFunction('equalp', ['a', 'b'], EqualP, '');
+  env.bindFunction('equal?', ['a', 'b'], EqualP, '');
+  env.bindFunction('=', ['a', 'b'], EqualP, '');
+  env.bindFunction('notequalp', ['a', 'b'], NotEqualP, '');
+  env.bindFunction('notequal?', ['a', 'b'], NotEqualP, '');
+  env.bindFunction('<>', ['a', 'b'], NotEqualP, '');
+
+  // Variable definition
   env.bindFunction('make', ['name', 'value'], Make, '');
+  env.bindFunction('name', ['value', 'name'], Make, '');
+  env.bindFunction('local', ['name'], Local, '');
+  env.bindFunction('localmake', ['name', 'value'], LocalMake, '');
+  env.bindFunction('thing', ['name'], Thing, '');
+  env.bindFunction('global', ['name'], Global, '');
+
+  env.bindFunction('print', ['arg'], Print, '');
   env.bindFunction('printout', ['name'], Printout, '');
   env.bindFunction('po', ['name'], Printout, '');
   env.bindFunction('erase', ['name'], Erase, '');

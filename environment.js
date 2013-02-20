@@ -26,18 +26,16 @@ Environment.prototype.lookupFunction = function(name) {
 
 Environment.prototype.lookupVariable = function(name) {
   var v = this.variables[name.toLowerCase()];
-  if (v != undefined) {
+  if (v != undefined && v.type != undefined) {
     return v;
   }
 
   if (this.parentEnv != undefined) {
     v = this.parentEnv.lookupVariable(name);
-    if (v != undefined) {
+    if (v != undefined && v.type != undefined) {
       return v;
     }
   }
-
-  return undefined;
 };
 
 //------------------------------------------------------------------------------
@@ -49,6 +47,21 @@ Environment.prototype.bindFunction = function(name, arglist, body, src) {
 
 Environment.prototype.bindVariable = function(name, value) {
   this.variables[name.toLowerCase()] = value;
+};
+
+//------------------------------------------------------------------------------
+// assign a variable to the most local environment it's already declared in
+
+Environment.prototype.assignVariable = function(name, value) {
+  var env = this;
+  while (env != undefined) {
+    var v = this.variables[name.toLowerCase()];
+    if (v != undefined || env.parentEnv === undefined) {
+      env.variables[name.toLowerCase()] = value;
+      break;
+    }
+    env = env.parentEnv;
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -68,7 +81,7 @@ Environment.prototype.callFunction = function(name, f, args, extraArgs) {
     newEnv.bindVariable(f.arglist[i], args[i]);
   }
 
-  if (extraArgs.length > 0) {
+  if (extraArgs != undefined && extraArgs.length > 0) {
     newEnv.bindVariable('[rest]', new List(extraArgs));
   }
 

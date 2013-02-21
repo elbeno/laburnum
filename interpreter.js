@@ -483,6 +483,20 @@ Interpreter.prototype.parseToForm = function(input, env) {
   // bind this function in the global env
   globalEnv.bindFunction(funcName, args, function(env) {
     var terp = new Interpreter();
-    return terp.run(tokenstream.slice(0), env);
+    try {
+      var v = terp.run(tokenstream.slice(0), env);
+      if (v != undefined) {
+        throw { message: "You don't say what to do with " + v.toString(), rethrow:true };
+      }
+    }
+    catch (e) {
+      if (e.rethrow) {
+        throw e;
+      }
+      else if (e.output) {
+        return e.output;
+      }
+    }
+    return undefined;
   }, src);
 };

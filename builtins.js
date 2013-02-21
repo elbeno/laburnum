@@ -692,6 +692,13 @@ function Erase(env) {
 }
 
 //------------------------------------------------------------------------------
+function Output(env, name) {
+  var a = env.lookupVariable('a');
+  throw { message: name + ' can only be used inside a procedure',
+          output: a };
+}
+
+//------------------------------------------------------------------------------
 var Sum = function(env) {
   return Reducer(env, function(a, b) {
     if (b.type != 'numeric') {
@@ -793,6 +800,9 @@ function InstallBuiltins(env) {
 
   env.bindFunction('printout', ['name'], Printout, '');
   env.bindFunction('po', ['name'], Printout, '');
+  env.bindFunction('output', ['a'], Output, '');
+  env.bindFunction('op', ['a'], Output, '');
+
   env.bindFunction('erase', ['name'], Erase, '');
   env.bindFunction('sum', ['a', 'b'], Sum, '');
   env.bindFunction('product', ['a', 'b'], Product, '');

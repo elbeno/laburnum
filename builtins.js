@@ -406,7 +406,75 @@ var NotEqualP = function(env) {
 };
 
 //------------------------------------------------------------------------------
+var BeforeP = function(env, name) {
+  var a = env.lookupVariable('a');
+  if (!a.isWord()) {
+    throw { message: name + " doesn't like " + a.toString + ' as input' };
+  }
+  var b = env.lookupVariable('b');
+  if (!b.isWord()) {
+    throw { message: name + " doesn't like " + b.toString + ' as input' };
+  }
+
+  return new Word(a.value < b.value);
+};
+
+//------------------------------------------------------------------------------
+var MemberP = function(env, name) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
+
+  if (b.isWord()) {
+    if (a.isWord()
+        && a.value.length == 1) {
+      // TODO: CASEIGNOREDP
+      var re = new RegExp(a.value);
+      return new Word(re.test(b.value).toString());
+    }
+    return new Word('false');
+  }
+  else {
+    for (var i = 0; i < b.values.length; ++i) {
+      if (EqualPInternal(a, b.values[i])) {
+        return new Word('true');
+      }
+    }
+  }
+
+  return new Word('false');
+};
+
+//------------------------------------------------------------------------------
+var SubstringP = function(env, name) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
+
+  if (!a.isWord() || !b.isWord()) {
+    return new Word('false');
+  }
+
+  // TODO: CASEIGNOREDP
+  var re = new RegExp(a.value);
+  return new Word(re.test(b.value).toString());
+};
+
+//------------------------------------------------------------------------------
+var NumberP = function(env) {
+  var a = env.lookupVariable('a');
+  return new Word(a.isNumeric().toString());
+};
+
+//------------------------------------------------------------------------------
+// Transmitters
+//------------------------------------------------------------------------------
 function Print(env) {
+  Type(env);
+  var repl = $('#repl');
+  repl.val(repl.val() + '\n');
+}
+
+//------------------------------------------------------------------------------
+function Type(env) {
   var a = env.lookupVariable('arg');
 
   var args = [a];
@@ -418,7 +486,110 @@ function Print(env) {
   var s = args.map(function(x) { return x.value; }).join(' ');
 
   var repl = $('#repl');
+  repl.val(repl.val() + s);
+}
+
+//------------------------------------------------------------------------------
+function Show(env) {
+  var a = env.lookupVariable('arg');
+
+  var args = [a];
+  var rest = env.lookupVariable('[rest]');
+  if (rest != undefined) {
+    args = args.concat(rest.values);
+  }
+
+  var s = args.map(function(x) { return x.toString(); }).join(' ');
+
+  var repl = $('#repl');
   repl.val(repl.val() + s + '\n');
+}
+
+//------------------------------------------------------------------------------
+// Queries
+//------------------------------------------------------------------------------
+function Count(env) {
+  var a = env.lookupVariable('a');
+  if (a.isWord()) {
+    return new Word(a.value.length);
+  }
+  else {
+    return new Word(a.values.length);
+  }
+}
+
+//------------------------------------------------------------------------------
+function Ascii(env) {
+  var a = env.lookupVariable('a');
+  if (!a.isWord() || a.value.length > 1) {
+    throw "ascii doesn't like " + a.toString() + ' as input';
+  }
+  else {
+    return new Word(a.value.charCodeAt(0));
+  }
+}
+
+//------------------------------------------------------------------------------
+function Char(env) {
+  var a = env.lookupVariable('a');
+  if (!a.isNumeric() || a.jvalue < 0 || a.jvalue > 255) {
+    throw "ascii doesn't like " + a.toString() + ' as input';
+  }
+  else {
+    return new Word(String.fromCharCode(a.jvalue));
+  }
+}
+
+//------------------------------------------------------------------------------
+function Member(env) {
+  var a = env.lookupVariable('a');
+  var b = env.lookupVariable('b');
+
+  if (b.isWord()) {
+    if (a.isWord()
+        && a.value.length == 1) {
+      // TODO: CASEIGNOREDP
+      var re = new RegExp(a.value + '.*');
+      var result = b.value.match(re);
+      if (!result) {
+        return new Word('');
+      }
+      return new Word(result[0]);
+    }
+    return new Word('');
+  }
+  else if (b.isList()) {
+    for (var i = 0; i < b.values.length; ++i) {
+      if (EqualPInternal(a, b.values[i])) {
+        return new List(b.values.slice(i));
+      }
+    }
+    return new List([]);
+  }
+
+  throw "member doesn't like " + b.toString() + ' as input';
+}
+
+//------------------------------------------------------------------------------
+function LowerCase(env) {
+  var a = env.lookupVariable('a');
+  if (!a.isWord()) {
+    throw "lowercase doesn't like " + a.toString() + ' as input';
+  }
+  else {
+    return new Word(a.value.toLowerCase());
+  }
+}
+
+//------------------------------------------------------------------------------
+function UpperCase(env) {
+  var a = env.lookupVariable('a');
+  if (!a.isWord()) {
+    throw "uppercase doesn't like " + a.toString() + ' as input';
+  }
+  else {
+    return new Word(a.value.toUpperCase());
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -589,6 +760,22 @@ function InstallBuiltins(env) {
   env.bindFunction('notequalp', ['a', 'b'], NotEqualP, '');
   env.bindFunction('notequal?', ['a', 'b'], NotEqualP, '');
   env.bindFunction('<>', ['a', 'b'], NotEqualP, '');
+  env.bindFunction('beforep', ['a', 'b'], BeforeP, '');
+  env.bindFunction('before?', ['a', 'b'], BeforeP, '');
+  env.bindFunction('memberp', ['a', 'b'], MemberP, '');
+  env.bindFunction('member?', ['a', 'b'], MemberP, '');
+  env.bindFunction('substringp', ['a', 'b'], SubstringP, '');
+  env.bindFunction('substring?', ['a', 'b'], SubstringP, '');
+  env.bindFunction('numberp', ['a'], NumberP, '');
+  env.bindFunction('number?', ['a'], NumberP, '');
+
+  // Queries
+  env.bindFunction('count', ['a'], Count, '');
+  env.bindFunction('ascii', ['a'], Ascii, '');
+  env.bindFunction('char', ['a'], Char, '');
+  env.bindFunction('member', ['a', 'b'], Member, '');
+  env.bindFunction('lowercase', ['a'], LowerCase, '');
+  env.bindFunction('uppercase', ['a'], UpperCase, '');
 
   // Variable definition
   env.bindFunction('make', ['name', 'value'], Make, '');
@@ -598,7 +785,12 @@ function InstallBuiltins(env) {
   env.bindFunction('thing', ['name'], Thing, '');
   env.bindFunction('global', ['name'], Global, '');
 
+  // Transmitters
   env.bindFunction('print', ['arg'], Print, '');
+  env.bindFunction('pr', ['arg'], Print, '');
+  env.bindFunction('type', ['arg'], Type, '');
+  env.bindFunction('show', ['arg'], Show, '');
+
   env.bindFunction('printout', ['name'], Printout, '');
   env.bindFunction('po', ['name'], Printout, '');
   env.bindFunction('erase', ['name'], Erase, '');

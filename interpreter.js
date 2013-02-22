@@ -407,6 +407,12 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
     return this.env.callFunction(name, f, args, extraArgs);
   }
   catch (e) {
+    if (e.output) {
+      return e.output;
+    }
+    else if (e.stop) {
+      return undefined;
+    }
     // if the message starts with the function name, don't add it
     var re = new RegExp('^' + name + ' ');
     if (re.test(e.message)) {

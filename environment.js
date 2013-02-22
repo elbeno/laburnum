@@ -36,6 +36,15 @@ Environment.prototype.lookupVariable = function(name) {
       return v;
     }
   }
+
+  return undefined;
+};
+
+//------------------------------------------------------------------------------
+// we can look up variables by name, just in the enclosing env
+
+Environment.prototype.lookupVariable1 = function(name) {
+  return this.variables[name.toLowerCase()];
 };
 
 //------------------------------------------------------------------------------

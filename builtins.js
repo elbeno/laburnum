@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
 function Reducer(env, f, init) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   var args = [a, b];
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     args = args.concat(rest.values);
   }
@@ -27,11 +27,11 @@ var BuildWord = function(env) {
 
 //------------------------------------------------------------------------------
 function BuildList(env) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   var datums = [a, b];
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     rest.values.map(function(x) { datums.push(x); });
   }
@@ -41,11 +41,11 @@ function BuildList(env) {
 
 //------------------------------------------------------------------------------
 function Sentence(env) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   var args = [a, b];
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     args = args.concat(rest.values);
   }
@@ -65,8 +65,8 @@ function Sentence(env) {
 
 //------------------------------------------------------------------------------
 function FPut(env) {
-  var car = env.lookupVariable('car');
-  var cdr = env.lookupVariable('cdr');
+  var car = env.lookupVariable1('car');
+  var cdr = env.lookupVariable1('cdr');
 
   // if the second arg is a word, the first arg must be a word of one letter
   if (cdr.isWord()) {
@@ -82,8 +82,8 @@ function FPut(env) {
 
 //------------------------------------------------------------------------------
 function LPut(env) {
-  var car = env.lookupVariable('car');
-  var cdr = env.lookupVariable('cdr');
+  var car = env.lookupVariable1('car');
+  var cdr = env.lookupVariable1('cdr');
 
   // if the second arg is a word, the first arg must be a word of one letter
   if (cdr.isWord()) {
@@ -99,13 +99,13 @@ function LPut(env) {
 
 //------------------------------------------------------------------------------
 function MakeArray(env) {
-  var size = env.lookupVariable('size');
+  var size = env.lookupVariable1('size');
   if (!size.isNumeric()) {
     throw { message: "array doesn't like " + size.toString() + 'as input' };
   }
 
   var origin = 0;
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     if (!rest.values[0].isNumeric()) {
       throw { message: "array doesn't like " + rest.values[0].toString() + 'as input' };
@@ -122,13 +122,13 @@ function MakeArray(env) {
 
 //------------------------------------------------------------------------------
 function ListToArray(env) {
-  var list = env.lookupVariable('list');
+  var list = env.lookupVariable1('list');
   if (!list.isList()) {
     throw { message: "listtoarray doesn't like " + list.toString() + 'as input' };
   }
 
   var origin = 0;
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     if (!rest.values[0].isNumeric()) {
       throw { message: "listtoarray doesn't like " + rest.values[0].toString() + 'as input' };
@@ -141,7 +141,7 @@ function ListToArray(env) {
 
 //------------------------------------------------------------------------------
 function ArrayToList(env) {
-  var array = env.lookupVariable('array');
+  var array = env.lookupVariable1('array');
   if (!array.isArray()) {
     throw { message: "arraytolist doesn't like " + array.toString() + 'as input' };
   }
@@ -151,7 +151,7 @@ function ArrayToList(env) {
 
 //------------------------------------------------------------------------------
 function Combine(env) {
-  var b = env.lookupVariable('b');
+  var b = env.lookupVariable1('b');
 
   if (b.isList()) {
     return FPut(env);
@@ -161,7 +161,7 @@ function Combine(env) {
 
 //------------------------------------------------------------------------------
 function Reverse(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
 
   if (a.isList()) {
     return new List(a.values.reverse());
@@ -199,13 +199,13 @@ function FirstInternal(a, name) {
 
 //------------------------------------------------------------------------------
 function First(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   return FirstInternal(a, 'first');
 }
 
 //------------------------------------------------------------------------------
 function Firsts(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isList()) {
     throw { message: "firsts doesn't like " + a.toString() + ' as input' };
   }
@@ -219,7 +219,7 @@ function Firsts(env) {
 
 //------------------------------------------------------------------------------
 function Last(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (a.isWord() && a.value.length > 0) {
     return new Word(a.value[a.value.length - 1]);
   }
@@ -250,13 +250,13 @@ function ButFirstInternal(a, name) {
 
 //------------------------------------------------------------------------------
 function ButFirst(env, name) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   return ButFirstInternal(a, name);
 }
 
 //------------------------------------------------------------------------------
 function ButFirsts(env, name) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isList()) {
     throw { message: name + " doesn't like " + a.toString() + ' as input' };
   }
@@ -270,7 +270,7 @@ function ButFirsts(env, name) {
 
 //------------------------------------------------------------------------------
 function ButLast(env, name) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (a.isWord() && a.value.length > 0) {
     return new Word(a.value.substring(0, a.value.length - 1));
   }
@@ -282,12 +282,12 @@ function ButLast(env, name) {
 
 //------------------------------------------------------------------------------
 function Item(env) {
-  var i = env.lookupVariable('i');
+  var i = env.lookupVariable1('i');
   if (!i.isNumeric()) {
     throw { message: "item doesn't like " + i.toString() + ' as input' };
   }
 
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
 
   // In Logo, data structures are 1-based.
   var idx = i.jvalue - 1;
@@ -316,17 +316,17 @@ function Item(env) {
 // Mutators
 //------------------------------------------------------------------------------
 function SetItem(env) {
-  var i = env.lookupVariable('i');
+  var i = env.lookupVariable1('i');
   if (!i.isNumeric()) {
     throw { message: "setitem doesn't like " + i.toString() + ' as input' };
   }
 
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isArray()) {
     throw { message: "setitem doesn't like " + a.toString() + ' as input' };
   }
 
-  var v = env.lookupVariable('v');
+  var v = env.lookupVariable1('v');
 
   // TODO: check for circular refs
 
@@ -339,25 +339,25 @@ function SetItem(env) {
 // Predicates
 //------------------------------------------------------------------------------
 var WordP = function(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   return new Word(a.isWord().toString());
 };
 
 //------------------------------------------------------------------------------
 var ListP = function(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   return new Word(a.isList().toString());
 };
 
 //------------------------------------------------------------------------------
 var ArrayP = function(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   return new Word(a.isArray().toString());
 };
 
 //------------------------------------------------------------------------------
 var EmptyP = function(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   var empty = a.value == '' || (a.isArray() && a.value == '{}');
   return new Word(empty.toString());
 };
@@ -392,26 +392,26 @@ var EqualPInternal = function(a, b) {
 }
 
 var EqualP = function(env) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   return new Word(EqualPInternal(a, b).toString());
 };
 
 var NotEqualP = function(env) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   return new Word((!EqualPInternal(a, b)).toString());
 };
 
 //------------------------------------------------------------------------------
 var BeforeP = function(env, name) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isWord()) {
     throw { message: name + " doesn't like " + a.toString + ' as input' };
   }
-  var b = env.lookupVariable('b');
+  var b = env.lookupVariable1('b');
   if (!b.isWord()) {
     throw { message: name + " doesn't like " + b.toString + ' as input' };
   }
@@ -421,8 +421,8 @@ var BeforeP = function(env, name) {
 
 //------------------------------------------------------------------------------
 var MemberP = function(env, name) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   if (b.isWord()) {
     if (a.isWord()
@@ -446,8 +446,8 @@ var MemberP = function(env, name) {
 
 //------------------------------------------------------------------------------
 var SubstringP = function(env, name) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   if (!a.isWord() || !b.isWord()) {
     return new Word('false');
@@ -460,7 +460,7 @@ var SubstringP = function(env, name) {
 
 //------------------------------------------------------------------------------
 var NumberP = function(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   return new Word(a.isNumeric().toString());
 };
 
@@ -475,10 +475,10 @@ function Print(env) {
 
 //------------------------------------------------------------------------------
 function Type(env) {
-  var a = env.lookupVariable('arg');
+  var a = env.lookupVariable1('arg');
 
   var args = [a];
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     args = args.concat(rest.values);
   }
@@ -491,10 +491,10 @@ function Type(env) {
 
 //------------------------------------------------------------------------------
 function Show(env) {
-  var a = env.lookupVariable('arg');
+  var a = env.lookupVariable1('arg');
 
   var args = [a];
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     args = args.concat(rest.values);
   }
@@ -509,7 +509,7 @@ function Show(env) {
 // Queries
 //------------------------------------------------------------------------------
 function Count(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (a.isWord()) {
     return new Word(a.value.length);
   }
@@ -520,7 +520,7 @@ function Count(env) {
 
 //------------------------------------------------------------------------------
 function Ascii(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isWord() || a.value.length > 1) {
     throw "ascii doesn't like " + a.toString() + ' as input';
   }
@@ -531,7 +531,7 @@ function Ascii(env) {
 
 //------------------------------------------------------------------------------
 function Char(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isNumeric() || a.jvalue < 0 || a.jvalue > 255) {
     throw "ascii doesn't like " + a.toString() + ' as input';
   }
@@ -542,8 +542,8 @@ function Char(env) {
 
 //------------------------------------------------------------------------------
 function Member(env) {
-  var a = env.lookupVariable('a');
-  var b = env.lookupVariable('b');
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
 
   if (b.isWord()) {
     if (a.isWord()
@@ -572,7 +572,7 @@ function Member(env) {
 
 //------------------------------------------------------------------------------
 function LowerCase(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isWord()) {
     throw "lowercase doesn't like " + a.toString() + ' as input';
   }
@@ -583,7 +583,7 @@ function LowerCase(env) {
 
 //------------------------------------------------------------------------------
 function UpperCase(env) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   if (!a.isWord()) {
     throw "uppercase doesn't like " + a.toString() + ' as input';
   }
@@ -596,19 +596,19 @@ function UpperCase(env) {
 // Variable definition
 //------------------------------------------------------------------------------
 function Make(env, name) {
-  var n = env.lookupVariable('name');
+  var n = env.lookupVariable1('name');
 
   if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
     throw { message: name + " doesn't like " + n.toString() + ' as input' };
   }
 
-  var v = env.lookupVariable('value');
+  var v = env.lookupVariable1('value');
   env.assignVariable(n.value, v);
 }
 
 //------------------------------------------------------------------------------
 function LocalInternal(env, name, defEnv) {
-  var n = env.lookupVariable('name');
+  var n = env.lookupVariable1('name');
 
   var args = [];
   if (n.isList()) {
@@ -616,7 +616,7 @@ function LocalInternal(env, name, defEnv) {
   } else {
     args = [n];
   }
-  var rest = env.lookupVariable('[rest]');
+  var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     args = args.concat(rest.values);
   }
@@ -636,19 +636,19 @@ function Local(env, name) {
 
 //------------------------------------------------------------------------------
 function LocalMake(env) {
-  var n = env.lookupVariable('name');
+  var n = env.lookupVariable1('name');
 
   if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
     throw { message: "localmake doesn't like " + n.toString() + ' as input' };
   }
 
-  var v = env.lookupVariable('value');
+  var v = env.lookupVariable1('value');
   env.bindVariable(n.value, v);
 }
 
 //------------------------------------------------------------------------------
 function Thing(env) {
-  var n = env.lookupVariable('name');
+  var n = env.lookupVariable1('name');
   var e = env.lookupVariable(n.value);
   if (e === undefined || e.type === undefined) {
     throw { message: n.toString() + ' has no value' };
@@ -663,8 +663,8 @@ function Global(env, name) {
 
 //------------------------------------------------------------------------------
 function Printout(env, name) {
-  var n = env.lookupVariable('name');
-  if (n.type == 'array') {
+  var n = env.lookupVariable1('name');
+  if (n.isArray()) {
     throw { message: name + " doesn't like " + n.toString() + ' as input' };
   }
 
@@ -683,8 +683,8 @@ function Printout(env, name) {
 
 //------------------------------------------------------------------------------
 function Erase(env) {
-  var n = env.lookupVariable('name');
-  if (n.type == 'array') {
+  var n = env.lookupVariable1('name');
+  if (n.isArray()) {
     throw { message: "erase doesn't like " + n.toString() + ' as input' };
   }
 
@@ -692,8 +692,153 @@ function Erase(env) {
 }
 
 //------------------------------------------------------------------------------
+// Control structures
+//------------------------------------------------------------------------------
+function Run(env) {
+  var instructionList = env.lookupVariable1('r');
+  if (instructionList.isArray()) {
+    throw { message: "run doesn't like " + instructionList.toString() + ' as input' };
+  }
+
+  var terp = new Interpreter();
+  return terp.interpret(instructionList.value, env);
+}
+
+//------------------------------------------------------------------------------
+function RunResult(env) {
+  var instructionList = env.lookupVariable1('r');
+  if (instructionList.isArray()) {
+    throw { message: "runresult doesn't like " + instructionList.toString() + ' as input' };
+  }
+
+  var terp = new Interpreter();
+  var e = terp.interpret(instructionList.value, env);
+  if (e === undefined) {
+    return new List([]);
+  }
+  return new List([e]);
+}
+
+//------------------------------------------------------------------------------
+function Repeat(env, name) {
+  var n = env.lookupVariable1('n');
+  if (!n.isNumeric()) {
+    throw { message: name + " doesn't like " + n.toString() + ' as input' };
+  }
+
+  var instructionList = env.lookupVariable1('r');
+  if (instructionList.isArray()) {
+    throw { message: "repeat doesn't like " + instructionList.toString() + ' as input' };
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(instructionList.value);
+
+  var terp = new Interpreter();
+  var e = undefined;
+  for (var i = 0; i < n; ++i) {
+    env.bindFunction('repcount', [], function(env) { return new Word(i + 1); }, '');
+    e = terp.run(tokenizer.tokenqueue.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+  }
+
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
+function Forever(env, name) {
+  var instructionList = env.lookupVariable1('r');
+  if (instructionList.isArray()) {
+    throw { message: "forever doesn't like " + instructionList.toString() + ' as input' };
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(instructionList.value);
+
+  var terp = new Interpreter();
+  var e = undefined;
+  for (var i = 0; ; ++i) {
+    env.bindFunction('repcount', [], function(env) { return new Word(i + 1); }, '');
+    e = terp.run(tokenizer.tokenqueue.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+  }
+
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
+function If(env, name) {
+  var cond  = env.lookupVariable1('cond');
+  if (!cond.isBoolean()) {
+    throw { message: name + " doesn't like " + cond.toString() + ' as input' };
+  }
+
+  var r = env.lookupVariable1('r');
+  if (r.isArray()) {
+    throw { message: name + " doesn't like " + r.toString() + ' as input' };
+  }
+
+  var terp = new Interpreter();
+  if (cond.jvalue) {
+    return terp.interpret(r.value, env);
+  }
+
+  var rest = env.lookupVariable1('[rest]');
+  if (rest != undefined) {
+    if (rest.values.length > 1) {
+      throw { message: name + ' has too many inputs' };
+    }
+    if (rest.values[0].isArray()) {
+      throw { message: name + " doesn't like " + rest.values[0].toString() + ' as input' };
+    }
+    return terp.interpret(rest.values[0].value, env);
+  }
+
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
+function IfElse(env, name) {
+  var cond  = env.lookupVariable1('cond');
+  if (!cond.isBoolean()) {
+    throw { message: name + " doesn't like " + cond.toString() + ' as input' };
+  }
+
+  var r1 = env.lookupVariable1('r1');
+  if (r1.isArray()) {
+    throw { message: name + " doesn't like " + r1.toString() + ' as input' };
+  }
+
+  var terp = new Interpreter();
+  if (cond.jvalue) {
+    return terp.interpret(r1.value, env);
+  }
+
+  var r2 = env.lookupVariable1('r2');
+  if (r2.isArray()) {
+    throw { message: name + " doesn't like " + r2.toString() + ' as input' };
+  }
+  return terp.interpret(r2.value, env);
+}
+
+//------------------------------------------------------------------------------
+function Stop(env, name) {
+  throw { message: name + ' can only be used inside a procedure',
+          stop: true };
+}
+
+//------------------------------------------------------------------------------
+function Ignore(env) {
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
 function Output(env, name) {
-  var a = env.lookupVariable('a');
+  var a = env.lookupVariable1('a');
   throw { message: name + ' can only be used inside a procedure',
           output: a };
 }
@@ -798,10 +943,20 @@ function InstallBuiltins(env) {
   env.bindFunction('type', ['arg'], Type, '');
   env.bindFunction('show', ['arg'], Show, '');
 
-  env.bindFunction('printout', ['name'], Printout, '');
-  env.bindFunction('po', ['name'], Printout, '');
+  // Control structures
+  env.bindFunction('run', ['r'], Run, '');
+  env.bindFunction('runresult', ['r'], RunResult, '');
+  env.bindFunction('repeat', ['n','r'], Repeat, '');
+  env.bindFunction('forever', ['r'], Forever, '');
+  env.bindFunction('if', ['cond','r'], If, '');
+  env.bindFunction('ifelse', ['cond','r1','r2'], IfElse, '');
   env.bindFunction('output', ['a'], Output, '');
   env.bindFunction('op', ['a'], Output, '');
+  env.bindFunction('stop', [], Stop, '');
+  env.bindFunction('ignore', ['e'], Ignore, '');
+
+  env.bindFunction('printout', ['name'], Printout, '');
+  env.bindFunction('po', ['name'], Printout, '');
 
   env.bindFunction('erase', ['name'], Erase, '');
   env.bindFunction('sum', ['a', 'b'], Sum, '');

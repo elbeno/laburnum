@@ -759,7 +759,7 @@ function Forever(env, name) {
 
   var terp = new Interpreter();
   var e = undefined;
-  for (var i = 0; ; ++i) {
+  for (var i = 0; true; ++i) {
     env.bindFunction('repcount', [], function(env) { return new Word(i + 1); }, '');
     e = terp.run(tokenizer.tokenqueue.slice(0), env);
     if (e != undefined) {
@@ -832,15 +832,217 @@ function Stop(env, name) {
 }
 
 //------------------------------------------------------------------------------
+function Output(env, name) {
+  var a = env.lookupVariable1('a');
+  throw { message: name + ' can only be used inside a procedure',
+          output: a };
+}
+
+//------------------------------------------------------------------------------
 function Ignore(env) {
   return undefined;
 }
 
 //------------------------------------------------------------------------------
-function Output(env, name) {
-  var a = env.lookupVariable1('a');
-  throw { message: name + ' can only be used inside a procedure',
-          output: a };
+function For(env, name) {
+  var control  = env.lookupVariable1('control');
+  if (!control.isList() || control.values.length < 3 || control.values.length > 4) {
+    throw { message: name + " doesn't like " + control.toString() + ' as input' };
+  }
+
+  var instructionList  = env.lookupVariable1('instlist');
+  if (instructionList.isArray()) {
+    throw { message: name + " doesn't like " + instructionList.toString() + ' as input' };
+  }
+
+  var ctrlVar = control.values[0];
+  if (!ctrlVar.isWord()) {
+    throw { message: name + " doesn't like " + ctrlVar.toString() + ' as input' };
+  }
+
+  var terp = new Interpreter();
+
+  var startVal = terp.interpret(control.values[1].value, env);
+  if (!startVal.isNumeric()) {
+    throw { message: name + " doesn't like " + startVal.toString() + ' as input' };
+  }
+
+  var endVal = terp.interpret(control.values[2].value, env);
+  if (!endVal.isNumeric()) {
+    throw { message: name + " doesn't like " + endVal.toString() + ' as input' };
+  }
+
+  var step = startVal.jvalue > endVal.jvalue ? -1 : 1;
+  if (control.values.length > 3) {
+    var stepVal = terp.interpret(control.values[3].value, env);
+    if (!stepVal.isNumeric()) {
+      throw { message: name + " doesn't like " + stepVal.toString() + ' as input' };
+    }
+    step = stepVal.jvalue;
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(instructionList.value);
+
+  var e = undefined;
+  for (var i = startVal.jvalue;
+       (step > 0 && i <= endVal.jvalue) || (step < 0 && i >= endVal.jvalue);
+       i = i + step) {
+    env.bindVariable(ctrlVar.value, new Word(i));
+    e = terp.run(tokenizer.tokenqueue.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+  }
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
+function While(env, name) {
+  var cond  = env.lookupVariable1('cond');
+  if (cond.isArray()) {
+    throw { message: name + " doesn't like " + cond.toString() + ' as input' };
+  }
+
+  var r = env.lookupVariable1('r');
+  if (r.isArray()) {
+    throw { message: name + " doesn't like " + r.toString() + ' as input' };
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(cond.value);
+  var condexpr = tokenizer.tokenqueue.slice(0);
+  tokenizer.tokenize(r.value);
+  var instlist = tokenizer.tokenqueue.slice(0);
+
+  var terp = new Interpreter();
+  var c = undefined;
+  var e = undefined;
+
+  while (true) {
+    c = terp.run(condexpr.slice(0), env);
+    if (!c.isBoolean()) {
+      throw { message: name + " doesn't like " + c.toString() + ' as input' };
+    }
+    if (!c.jvalue) {
+      return undefined;
+    }
+    e = terp.run(instlist.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+function DoWhile(env) {
+  var cond  = env.lookupVariable1('cond');
+  if (cond.isArray()) {
+    throw { message: name + " doesn't like " + cond.toString() + ' as input' };
+  }
+
+  var r = env.lookupVariable1('r');
+  if (r.isArray()) {
+    throw { message: name + " doesn't like " + r.toString() + ' as input' };
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(cond.value);
+  var condexpr = tokenizer.tokenqueue.slice(0);
+  tokenizer.tokenize(r.value);
+  var instlist = tokenizer.tokenqueue.slice(0);
+
+  var terp = new Interpreter();
+  var c = undefined;
+  var e = undefined;
+
+  while (true) {
+    e = terp.run(instlist.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+    c = terp.run(condexpr.slice(0), env);
+    if (!c.isBoolean()) {
+      throw { message: name + " doesn't like " + c.toString() + ' as input' };
+    }
+    if (!c.jvalue) {
+      return undefined;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+function Until(env) {
+  var cond  = env.lookupVariable1('cond');
+  if (cond.isArray()) {
+    throw { message: name + " doesn't like " + cond.toString() + ' as input' };
+  }
+
+  var r = env.lookupVariable1('r');
+  if (r.isArray()) {
+    throw { message: name + " doesn't like " + r.toString() + ' as input' };
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(cond.value);
+  var condexpr = tokenizer.tokenqueue.slice(0);
+  tokenizer.tokenize(r.value);
+  var instlist = tokenizer.tokenqueue.slice(0);
+
+  var terp = new Interpreter();
+  var c = undefined;
+  var e = undefined;
+
+  while (true) {
+    c = terp.run(condexpr.slice(0), env);
+    if (!c.isBoolean()) {
+      throw { message: name + " doesn't like " + c.toString() + ' as input' };
+    }
+    if (c.jvalue) {
+      return undefined;
+    }
+    e = terp.run(instlist.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+function DoUntil(env) {
+  var cond  = env.lookupVariable1('cond');
+  if (cond.isArray()) {
+    throw { message: name + " doesn't like " + cond.toString() + ' as input' };
+  }
+
+  var r = env.lookupVariable1('r');
+  if (r.isArray()) {
+    throw { message: name + " doesn't like " + r.toString() + ' as input' };
+  }
+
+  var tokenizer = new Tokenizer();
+  tokenizer.tokenize(cond.value);
+  var condexpr = tokenizer.tokenqueue.slice(0);
+  tokenizer.tokenize(r.value);
+  var instlist = tokenizer.tokenqueue.slice(0);
+
+  var terp = new Interpreter();
+  var c = undefined;
+  var e = undefined;
+
+  while (true) {
+    e = terp.run(instlist.slice(0), env);
+    if (e != undefined) {
+      return e;
+    }
+    c = terp.run(condexpr.slice(0), env);
+    if (!c.isBoolean()) {
+      throw { message: name + " doesn't like " + c.toString() + ' as input' };
+    }
+    if (c.jvalue) {
+      return undefined;
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -954,6 +1156,11 @@ function InstallBuiltins(env) {
   env.bindFunction('op', ['a'], Output, '');
   env.bindFunction('stop', [], Stop, '');
   env.bindFunction('ignore', ['e'], Ignore, '');
+  env.bindFunction('for', ['control', 'instlist'], For, '');
+  env.bindFunction('while', ['cond', 'r'], While, '');
+  env.bindFunction('do.while', ['r', 'cond'], DoWhile, '');
+  env.bindFunction('until', ['cond', 'r'], Until, '');
+  env.bindFunction('do.until', ['r', 'cond'], DoUntil, '');
 
   env.bindFunction('printout', ['name'], Printout, '');
   env.bindFunction('po', ['name'], Printout, '');

@@ -361,7 +361,7 @@ Interpreter.prototype.arrayexpr = function() {
 };
 
 //------------------------------------------------------------------------------
-Interpreter.prototype.value = function(name, eatExtraArgs) {
+Interpreter.prototype.value = function(name, eatArgs) {
   // prefer a variable
   var v = this.env.lookupVariable(name);
   if (v != undefined) {
@@ -378,13 +378,16 @@ Interpreter.prototype.value = function(name, eatExtraArgs) {
   for (var i = 0; i < f.arglist.length; ++i) {
     var e = this.relop();
     if (e === undefined) {
+      if (eatArgs) {
+        break;
+      }
       throw { message: 'not enough inputs to ' + name };
     }
     args.push(e);
   }
 
   var extraArgs = [];
-  if (eatExtraArgs) {
+  if (eatArgs) {
     var t = this.tokenizer.peek();
     while (t != undefined && t.type != token_ns.Enum.RIGHT_PAREN) {
       var e = this.relop();

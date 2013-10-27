@@ -101,14 +101,14 @@ function LPut(env) {
 function MakeArray(env) {
   var size = env.lookupVariable1('size');
   if (!size.isNumeric()) {
-    throw { message: "array doesn't like " + size.toString() + 'as input' };
+    throw { message: "array doesn't like " + size.toString() + ' as input' };
   }
 
   var origin = 0;
   var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     if (!rest.values[0].isNumeric()) {
-      throw { message: "array doesn't like " + rest.values[0].toString() + 'as input' };
+      throw { message: "array doesn't like " + rest.values[0].toString() + ' as input' };
     }
     origin = rest.values[0].jvalue;
   }
@@ -124,14 +124,14 @@ function MakeArray(env) {
 function ListToArray(env) {
   var list = env.lookupVariable1('list');
   if (!list.isList()) {
-    throw { message: "listtoarray doesn't like " + list.toString() + 'as input' };
+    throw { message: "listtoarray doesn't like " + list.toString() + ' as input' };
   }
 
   var origin = 0;
   var rest = env.lookupVariable1('[rest]');
   if (rest != undefined) {
     if (!rest.values[0].isNumeric()) {
-      throw { message: "listtoarray doesn't like " + rest.values[0].toString() + 'as input' };
+      throw { message: "listtoarray doesn't like " + rest.values[0].toString() + ' as input' };
     }
     origin = rest.values[0].jvalue;
   }
@@ -143,7 +143,7 @@ function ListToArray(env) {
 function ArrayToList(env) {
   var array = env.lookupVariable1('array');
   if (!array.isArray()) {
-    throw { message: "arraytolist doesn't like " + array.toString() + 'as input' };
+    throw { message: "arraytolist doesn't like " + array.toString() + ' as input' };
   }
 
   return new List(array.values);
@@ -1048,6 +1048,9 @@ function DoUntil(env) {
 //------------------------------------------------------------------------------
 var Sum = function(env) {
   return Reducer(env, function(a, b) {
+    if (b == undefined) {
+      return a;
+    }
     if (b.type != 'numeric') {
       throw { message: "sum doesn't like " + b.toString() + ' as input' };
     }
@@ -1056,13 +1059,257 @@ var Sum = function(env) {
 };
 
 //------------------------------------------------------------------------------
+var Difference = function(env) {
+  var a  = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "difference doesn't like " + a.toString() + ' as input' };
+  }
+  var b  = env.lookupVariable1('b');
+  if (!b.isNumeric()) {
+    throw { message: "difference doesn't like " + b.toString() + ' as input' };
+  }
+  return new Word(a.jvalue - b.jvalue);
+};
+
+//------------------------------------------------------------------------------
+var Minus = function(env) {
+  var a  = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "minus doesn't like " + a.toString() + ' as input' };
+  }
+  return new Word(-a.jvalue);
+};
+
+//------------------------------------------------------------------------------
 var Product = function(env) {
   return Reducer(env, function(a, b) {
+    if (b == undefined) {
+      return a;
+    }
     if (b.type != 'numeric') {
       throw { message: "product doesn't like " + b.toString() + ' as input' };
     }
     return a * b.jvalue;
   }, 1);
+};
+
+//------------------------------------------------------------------------------
+var Quotient = function(env) {
+
+  var rest = env.lookupVariable1('[rest]');
+  if (rest != undefined) {
+    throw { message: 'quotient has too many inputs' };
+  }
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "quotient doesn't like " + a.toString() + ' as input' };
+  }
+
+  var b = env.lookupVariable1('b');
+  if (b != undefined) {
+    if (!b.isNumeric()) {
+      throw { message: "quotient doesn't like " + b.toString() + ' as input' };
+    }
+    return new Word(a.jvalue / b.jvalue)
+  }
+  else {
+    return new Word(1 / a.jvalue);
+  }
+};
+
+//------------------------------------------------------------------------------
+var Mod = function(env, name, signmatch) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: name + " doesn't like " + a.toString() + ' as input' };
+  }
+
+  var b = env.lookupVariable1('b');
+  if (!b.isNumeric()) {
+    throw { message: name +" doesn't like " + b.toString() + ' as input' };
+  }
+
+  var c = a.jvalue % b.jvalue;
+
+  if (signmatch == 'b' && a.jvalue * b.jvalue < 0)
+  {
+    return new Word(b.jvalue + c);
+  }
+  return new Word(c);
+};
+
+//------------------------------------------------------------------------------
+var Remainder = function(env) {
+  return Mod(env, 'remainder', 'a');
+}
+
+//------------------------------------------------------------------------------
+var Modulo = function(env) {
+  return Mod(env, 'modulo', 'b');
+}
+
+//------------------------------------------------------------------------------
+var Int = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "int doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(0|a.jvalue);
+};
+
+//------------------------------------------------------------------------------
+var Round = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "round doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.round(a.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Sqrt = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "round doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.sqrt(a.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Power = function(env) {
+  var a  = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "power doesn't like " + a.toString() + ' as input' };
+  }
+  var b  = env.lookupVariable1('b');
+  if (!b.isNumeric()) {
+    throw { message: "power doesn't like " + b.toString() + ' as input' };
+  }
+  return new Word(Math.pow(a.jvalue, b.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Exp = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "exp doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.exp(a.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Log10 = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "log10 doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.log(a.jvalue) / Math.log(10));
+};
+
+//------------------------------------------------------------------------------
+var Ln = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "ln doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.log(a.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Sin = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "sin doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.sin(a.jvalue * Math.PI / 180));
+};
+
+//------------------------------------------------------------------------------
+var Radsin = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "radsin doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.sin(a.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Cos = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "cos doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.cos(a.jvalue * Math.PI / 180));
+};
+
+//------------------------------------------------------------------------------
+var Radcos = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "radcos doesn't like " + a.toString() + ' as input' };
+  }
+
+  return new Word(Math.cos(a.jvalue));
+};
+
+//------------------------------------------------------------------------------
+var Radarctan = function(env) {
+
+  var a = env.lookupVariable1('a');
+  if (!a.isNumeric()) {
+    throw { message: "arctan doesn't like " + a.toString() + ' as input' };
+  }
+
+  var rest = env.lookupVariable1('[rest]');
+  if (rest != undefined) {
+    if (rest.values.length > 1) {
+      throw { message: 'radarctan has too many inputs' };
+    }
+    if (!rest.values[0].isNumeric()) {
+      throw { message: "radarctan doesn't like " + rest.values[0].toString() + ' as input' };
+    }
+
+    if (a.jvalue == 0) {
+      if (rest.values[0].jvalue > 0) {
+        return new Word(Math.PI/2);
+      }
+      else if (rest.values[0].jvalue < 0) {
+        return new Word(-Math.PI/2);
+      }
+      return new Word('0');
+    }
+    return new Word(Math.atan(rest.values[0].jvalue / a.jvalue));
+  }
+  else {
+    return new Word(Math.atan(a.jvalue));
+  }
+};
+
+//------------------------------------------------------------------------------
+var Arctan = function(env) {
+  var ret = Radarctan(env);
+  return new Word(ret.jvalue / Math.PI * 180);
 };
 
 //------------------------------------------------------------------------------
@@ -1167,7 +1414,25 @@ function InstallBuiltins(env) {
 
   env.bindFunction('erase', ['name'], Erase, '');
   env.bindFunction('sum', ['a', 'b'], Sum, '');
+  env.bindFunction('difference', ['a', 'b'], Difference, '');
+  env.bindFunction('minus', ['a'], Minus, '');
   env.bindFunction('product', ['a', 'b'], Product, '');
+  env.bindFunction('quotient', ['a', 'b'], Quotient, '');
+  env.bindFunction('remainder', ['a', 'b'], Remainder, '');
+  env.bindFunction('modulo', ['a', 'b'], Modulo, '');
+  env.bindFunction('int', ['a'], Int, '');
+  env.bindFunction('round', ['a'], Round, '');
+  env.bindFunction('sqrt', ['a'], Sqrt, '');
+  env.bindFunction('power', ['a', 'b'], Power, '');
+  env.bindFunction('exp', ['a'], Exp, '');
+  env.bindFunction('log10', ['a'], Log10, '');
+  env.bindFunction('ln', ['a'], Ln, '');
+  env.bindFunction('sin', ['a'], Sin, '');
+  env.bindFunction('radsin', ['a'], Radsin, '');
+  env.bindFunction('cos', ['a'], Cos, '');
+  env.bindFunction('radcos', ['a'], Radcos, '');
+  env.bindFunction('arctan', ['a'], Arctan, '');
+  env.bindFunction('radarctan', ['a'], Radarctan, '');
 }
 
 InstallBuiltins(globalEnv);

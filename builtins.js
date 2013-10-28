@@ -1345,6 +1345,9 @@ function InstallBuiltins(env) {
 
   // Mutators
   env.bindFunction('setitem', ['i', 'a', 'v'], SetItem, '');
+  // TODO: mdsetitem library function
+  // TODO: .setfirst, .setbf, .setitem
+  // TODO: push, pop, queue, dequeue (library functions)
 
   // Predicates
   env.bindFunction('wordp', ['a'], WordP, '');
@@ -1363,20 +1366,103 @@ function InstallBuiltins(env) {
   env.bindFunction('<>', ['a', 'b'], NotEqualP, '');
   env.bindFunction('beforep', ['a', 'b'], BeforeP, '');
   env.bindFunction('before?', ['a', 'b'], BeforeP, '');
+  // TODO: .eq
   env.bindFunction('memberp', ['a', 'b'], MemberP, '');
   env.bindFunction('member?', ['a', 'b'], MemberP, '');
   env.bindFunction('substringp', ['a', 'b'], SubstringP, '');
   env.bindFunction('substring?', ['a', 'b'], SubstringP, '');
   env.bindFunction('numberp', ['a'], NumberP, '');
   env.bindFunction('number?', ['a'], NumberP, '');
+  // TODO: vbarredp, vbarred?
+  // TODO: backslashedp. backslashed? (library functions)
 
   // Queries
   env.bindFunction('count', ['a'], Count, '');
   env.bindFunction('ascii', ['a'], Ascii, '');
+  // TODO: rawascii
   env.bindFunction('char', ['a'], Char, '');
   env.bindFunction('member', ['a', 'b'], Member, '');
   env.bindFunction('lowercase', ['a'], LowerCase, '');
   env.bindFunction('uppercase', ['a'], UpperCase, '');
+  // TODO: standout, parse, runparse
+
+  // Transmitters
+  env.bindFunction('print', ['arg'], Print, '');
+  env.bindFunction('pr', ['arg'], Print, '');
+  env.bindFunction('type', ['arg'], Type, '');
+  env.bindFunction('show', ['arg'], Show, '');
+
+  // Receivers
+  // TODO: readlist, rl
+  // TODO: readword, rw
+  // TODO: readrawline
+  // TODO: readchar, rc
+  // TODO: readchars, rcs
+  // TODO: shell
+
+  // File access
+  // TODO: setprefix, prefix
+  // TODO: openread, openwrite, openappend, openupdate, close
+  // TODO: allopen, closeall
+  // TODO: erasefile, erf
+  // TODO: dribble, nodriblle
+  // TODO: setread, setwrite
+  // TODO: reader, writer
+  // TODO: setreadpos, setwritepos, readpos, writepos
+  // TODO: eofp, eof?, filep, file?
+
+  // Terminal access
+  // TODO: keyp, key?
+  // TODO: cleartext, ct
+  // TODO: setcursor, cursor
+  // TODO: setmargins
+  // TODO: settextcolor, settc
+  // TODO: increasefont, decreasefont
+  // TODO: settextsize, textsize
+  // TODO: setfont, font
+
+  // Arithmetic operations
+  env.bindFunction('sum', ['a', 'b'], Sum, '');
+  env.bindFunction('difference', ['a', 'b'], Difference, '');
+  env.bindFunction('minus', ['a'], Minus, '');
+  env.bindFunction('product', ['a', 'b'], Product, '');
+  env.bindFunction('quotient', ['a', 'b'], Quotient, '');
+  env.bindFunction('remainder', ['a', 'b'], Remainder, '');
+  env.bindFunction('modulo', ['a', 'b'], Modulo, '');
+  env.bindFunction('int', ['a'], Int, '');
+  env.bindFunction('round', ['a'], Round, '');
+  env.bindFunction('sqrt', ['a'], Sqrt, '');
+  env.bindFunction('power', ['a', 'b'], Power, '');
+  env.bindFunction('exp', ['a'], Exp, '');
+  env.bindFunction('log10', ['a'], Log10, '');
+  env.bindFunction('ln', ['a'], Ln, '');
+  env.bindFunction('sin', ['a'], Sin, '');
+  env.bindFunction('radsin', ['a'], Radsin, '');
+  env.bindFunction('cos', ['a'], Cos, '');
+  env.bindFunction('radcos', ['a'], Radcos, '');
+  env.bindFunction('arctan', ['a'], Arctan, '');
+  env.bindFunction('radarctan', ['a'], Radarctan, '');
+  // TODO: rseq library function
+  // TODO: iseq library function
+
+  // Arithmetic predicates
+  // TODO: lessp, less?
+  // TODO: greaterp, greater?
+  // TODO: lessequalp, lessequal?
+  // TODO: greaterequalp, greaterequal?
+
+  // Random numbers
+  // TODO: random, rerandom
+
+  // Print formatting
+  // TODO: form
+
+  // Bitwise operations
+  // TODO: bitand, bitor, bitxor, bitnot
+  // TODO: ashift, lshift
+
+  // Logical operations
+  // TODO: and, or, not
 
   // Variable definition
   env.bindFunction('make', ['name', 'value'], Make, '');
@@ -1385,12 +1471,6 @@ function InstallBuiltins(env) {
   env.bindFunction('localmake', ['name', 'value'], LocalMake, '');
   env.bindFunction('thing', ['name'], Thing, '');
   env.bindFunction('global', ['name'], Global, '');
-
-  // Transmitters
-  env.bindFunction('print', ['arg'], Print, '');
-  env.bindFunction('pr', ['arg'], Print, '');
-  env.bindFunction('type', ['arg'], Type, '');
-  env.bindFunction('show', ['arg'], Show, '');
 
   // Control structures
   env.bindFunction('run', ['r'], Run, '');
@@ -1413,26 +1493,9 @@ function InstallBuiltins(env) {
   env.bindFunction('po', ['name'], Printout, '');
 
   env.bindFunction('erase', ['name'], Erase, '');
-  env.bindFunction('sum', ['a', 'b'], Sum, '');
-  env.bindFunction('difference', ['a', 'b'], Difference, '');
-  env.bindFunction('minus', ['a'], Minus, '');
-  env.bindFunction('product', ['a', 'b'], Product, '');
-  env.bindFunction('quotient', ['a', 'b'], Quotient, '');
-  env.bindFunction('remainder', ['a', 'b'], Remainder, '');
-  env.bindFunction('modulo', ['a', 'b'], Modulo, '');
-  env.bindFunction('int', ['a'], Int, '');
-  env.bindFunction('round', ['a'], Round, '');
-  env.bindFunction('sqrt', ['a'], Sqrt, '');
-  env.bindFunction('power', ['a', 'b'], Power, '');
-  env.bindFunction('exp', ['a'], Exp, '');
-  env.bindFunction('log10', ['a'], Log10, '');
-  env.bindFunction('ln', ['a'], Ln, '');
-  env.bindFunction('sin', ['a'], Sin, '');
-  env.bindFunction('radsin', ['a'], Radsin, '');
-  env.bindFunction('cos', ['a'], Cos, '');
-  env.bindFunction('radcos', ['a'], Radcos, '');
-  env.bindFunction('arctan', ['a'], Arctan, '');
-  env.bindFunction('radarctan', ['a'], Radarctan, '');
+
+
+
 }
 
 InstallBuiltins(globalEnv);

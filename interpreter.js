@@ -152,7 +152,8 @@ Interpreter.prototype.mulop = function() {
 //------------------------------------------------------------------------------
 Interpreter.prototype.unaryop = function() {
   var t = this.tokenizer.peek();
-  if (t != undefined && t.type == token_ns.Enum.ADDOP) {
+  if (t != undefined &&
+      (t.type == token_ns.Enum.ADDOP || t.type == token_ns.Enum.UNARY_MINUS)) {
     this.tokenizer.consume();
     var e = this.expr();
 

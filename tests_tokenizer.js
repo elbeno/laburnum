@@ -43,11 +43,24 @@ test( 'special', function() {
 test( 'operators', function() {
   var tokenizer = new Tokenizer();
 
+  tokenizer.tokenize('(-');
+  deepEqual( tokenizer.tokenqueue,
+             [ {type:token_ns.Enum.LEFT_PAREN, lexeme:'('},
+               {type:token_ns.Enum.UNARY_MINUS, lexeme:'-'} ],
+             'Unary minus 1' );
+
   tokenizer.tokenize('+ -');
   deepEqual( tokenizer.tokenqueue,
              [ {type:token_ns.Enum.ADDOP, lexeme:'+'},
-               {type:token_ns.Enum.ADDOP, lexeme:'-'} ],
-             'AddOps' );
+               {type:token_ns.Enum.UNARY_MINUS, lexeme:'-'} ],
+             'AddOps 1' );
+
+  tokenizer.tokenize('3-1');
+  deepEqual( tokenizer.tokenqueue,
+             [ {type:token_ns.Enum.WORD, lexeme:'3'},
+               {type:token_ns.Enum.ADDOP, lexeme:'-'},
+               {type:token_ns.Enum.WORD, lexeme:'1'} ],
+             'Addops 2' );
 
   tokenizer.tokenize('* / %');
   deepEqual( tokenizer.tokenqueue,

@@ -30,6 +30,10 @@ test( 'minus', function() {
   deepEqual(terp.interpret('minus 5', globalEnv),
             new Word('-5'),
            'minus 5 -> -5');
+
+  deepEqual(terp.interpret('minus 5 + 2', globalEnv),
+            new Word('-7'),
+           'minus 5 + 2 -> -7');
 });
 
 test( 'product', function() {
@@ -75,13 +79,13 @@ test( 'remainder', function() {
             new Word('-1'),
            'remainder -7 3 -> -1');
 
-  deepEqual(terp.interpret('remainder 7 (-3)', globalEnv),
+  deepEqual(terp.interpret('remainder 7 -3', globalEnv),
             new Word('1'),
-           'remainder 7 (-3) -> 1');
+           'remainder 7 -3 -> 1');
 
-  deepEqual(terp.interpret('remainder -7 (-3)', globalEnv),
+  deepEqual(terp.interpret('remainder -7 -3', globalEnv),
             new Word('-1'),
-           'remainder -7 (-3) -> -1');
+           'remainder -7 -3 -> -1');
 });
 
 test( 'modulo', function() {
@@ -95,13 +99,13 @@ test( 'modulo', function() {
             new Word('2'),
            'modulo -7 3 -> 2');
 
-  deepEqual(terp.interpret('modulo 7 (-3)', globalEnv),
+  deepEqual(terp.interpret('modulo 7 -3', globalEnv),
             new Word('-2'),
-           'modulo 7 (-3) -> -2');
+           'modulo 7 -3 -> -2');
 
-  deepEqual(terp.interpret('modulo -7 (-3)', globalEnv),
+  deepEqual(terp.interpret('modulo -7 -3', globalEnv),
             new Word('-1'),
-           'modulo -7 (-3) -> -1');
+           'modulo -7 -3 -> -1');
 });
 
 test( 'int', function() {
@@ -159,7 +163,7 @@ test( 'power', function() {
             new Word('4'),
            'power 2 2 -> 4');
 
-  deepEqual(terp.interpret('power 2 (-2)', globalEnv),
+  deepEqual(terp.interpret('power 2 -2', globalEnv),
             new Word('0.25'),
            'power 2 -2 -> 0.25');
 
@@ -299,9 +303,9 @@ test( 'arctan', function() {
             new Word('90'),
            '(arctan 0 1) -> 90');
 
-  deepEqual(terp.interpret('(arctan 0 (-1))', globalEnv),
+  deepEqual(terp.interpret('(arctan 0 -1)', globalEnv),
             new Word('-90'),
-           '(arctan 0 (-1)) -> -90');
+           '(arctan 0 -1) -> -90');
 });
 
 test( 'radarctan', function() {
@@ -327,7 +331,7 @@ test( 'radarctan', function() {
             new Word(Math.PI/2),
            '(radarctan 0 1) -> ' + Math.PI/2);
 
-  deepEqual(terp.interpret('(radarctan 0 (-1))', globalEnv),
+  deepEqual(terp.interpret('(radarctan 0 -1)', globalEnv),
             new Word(-Math.PI/2),
-           '(radarctan 0 (-1)) -> ' + -Math.PI/2);
+           '(radarctan 0 -1) -> ' + -Math.PI/2);
 });

@@ -5,16 +5,17 @@ token_ns.Enum = {
   RELOP:0,
   MULOP:1,
   ADDOP:2,
-  LEFT_SQUARE_BRACKET:3,
-  RIGHT_SQUARE_BRACKET:4,
-  WORD:5,
-  LEFT_PAREN:6,
-  RIGHT_PAREN:7,
+  LEFT_PAREN:3,
+  RIGHT_PAREN:4,
+  LEFT_SQUARE_BRACKET:5,
+  RIGHT_SQUARE_BRACKET:6,
+  WORD:7,
   COLON:8,
   QUOTE:9,
   LEFT_CURLY_BRACKET:10,
   RIGHT_CURLY_BRACKET:11,
-  AT_SIGN:12
+  AT_SIGN:12,
+  UNARY_MINUS:13
 };
 
 //------------------------------------------------------------------------------
@@ -39,6 +40,7 @@ Tokenizer.prototype.preprocess = function(input) {
 
 //------------------------------------------------------------------------------
 Tokenizer.prototype.tokenize = function(s) {
+  var lastSpace = -1;
   var startIndex = 0;
   this.tokenqueue = [];
 
@@ -108,8 +110,22 @@ Tokenizer.prototype.tokenize = function(s) {
       this.tokenqueue.push({type:token_ns.Enum.MULOP, lexeme:c});
       break;
 
-    case '+':
+    // Minus sign means unary minus if the previous token is an infix operator
+    // or open parenthesis, or it is preceded by a space and followed by a
+    // nonspace.
     case '-':
+      if ((this.tokenqueue.length == 0
+           || this.tokenqueue[this.tokenqueue.length - 1].type <= token_ns.Enum.LEFT_PAREN)
+          ||
+          (lastSpace == startIndex - 1
+           && (startIndex + 1 == s.length || !/\s/.test(s[startIndex + 1])))) {
+        ++startIndex;
+        this.tokenqueue.push({type:token_ns.Enum.UNARY_MINUS, lexeme:c});
+        break;
+      }
+      // fall through
+
+    case '+':
       ++startIndex;
       this.tokenqueue.push({type:token_ns.Enum.ADDOP, lexeme:c});
       break;
@@ -131,6 +147,7 @@ Tokenizer.prototype.tokenize = function(s) {
         startIndex = this.tokenizeWord(s, startIndex, /[\s\[\]\(\)\{\}\+\-\*\/=<>]/);
       }
       else {
+        lastSpace = startIndex;
         ++startIndex;
       }
       break;

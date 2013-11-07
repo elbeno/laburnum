@@ -63,10 +63,10 @@ Interpreter.prototype.relop = function() {
     case '<=':
       return new Word(lhs.jvalue <= rhs.jvalue);
     case '<>':
-      var f = this.env.lookupFunction('<>');
+      var f = this.env.lookupFunction('notequalp');
       return this.env.callFunction('<>', f, [lhs, rhs]);
     case '=':
-      f = this.env.lookupFunction('=');
+      f = this.env.lookupFunction('equalp');
       return this.env.callFunction('=', f, [lhs, rhs]);
     }
   }
@@ -376,39 +376,35 @@ Interpreter.prototype.value = function(name, eatArgs) {
   var f = this.env.lookupFunction(name);
 
   var args = [];
-  for (var i = 0; i < f.arglist.length; ++i) {
-    var e = this.relop();
-    if (e === undefined) {
-      if (eatArgs) {
+  for (var i = 0; eatArgs || i < f.argspec.defaultArgs; ++i) {
+
+    if (eatArgs) {
+      var t = this.tokenizer.peek();
+      if (t === undefined) {
+        throw { message: 'unmatched (',
+                continuationPrompt: '~ '};
+      }
+      if (t.type == token_ns.Enum.RIGHT_PAREN) {
+        this.tokenizer.consume();
         break;
       }
-      throw { message: 'not enough inputs to ' + name };
     }
+
+    var e = this.relop();
     args.push(e);
   }
 
-  var extraArgs = [];
-  if (eatArgs) {
-    var t = this.tokenizer.peek();
-    while (t != undefined && t.type != token_ns.Enum.RIGHT_PAREN) {
-      var e = this.relop();
-      if (e != undefined) {
-        extraArgs.push(e);
-      }
-      t = this.tokenizer.peek();
-    }
-
-    if (t === undefined) {
-      throw 'unmatched (';
-    }
-
-    this.tokenizer.consume();
+  if (args.length < f.argspec.minArgs) {
+    throw { message: 'not enough inputs to ' + name };
+  }
+  else if (f.argspec.maxArgs >= 0 && args.length > f.argspec.maxArgs) {
+    throw { message: 'too many inputs to ' + name };
   }
 
   try {
     // we pass the name of the function as typed here, so that errors can be
     // friendly
-    return this.env.callFunction(name, f, args, extraArgs);
+    return this.env.callFunction(name, f, args);
   }
   catch (e) {
     if (e.output) {
@@ -450,7 +446,7 @@ Interpreter.prototype.parseToForm = function(input, env) {
   }
   var e = new Word(t.lexeme);
   if (e.isNumeric()) {
-    throw { message: "to doesn't like " + e.toString() + ' as input' };
+    throw { message: "to doesn't like " + t.lexeme + ' as input' };
   }
   var funcName = t.lexeme;
 
@@ -465,23 +461,45 @@ Interpreter.prototype.parseToForm = function(input, env) {
     }
   }
 
+  // TODO: proper argument parsing (with proper continuation prompts inside lists)
+
   // now, if we don't have end on the last line, we can early-out
   if (!/^end$/i.test(lines[lines.length - 1])) {
     throw { continuationPrompt: '> ' };
   }
 
-  // any other tokens are parameter names. They may be appended with :
-  var args = [];
-  t = this.tokenizer.consume();
-  while (t != undefined) {
-    if (t.type != token_ns.Enum.COLON) {
-      e = new Word(t.lexeme);
-      if (e.isNumeric()) {
-        throw { message: "to doesn't like " + e.toString() + ' as input' };
+  // any other tokens are parameter names
+  var argspec = { requiredArgs: [] , optionalArgs: [], restArg: undefined,
+                  defaultArgs: 0, maxArgs: 0, minArgs: 0 };
+  var arg = this.parseToArg();
+  while (arg != undefined) {
+    if (arg.optional) {
+      if (arg.expr != undefined) {
+        argspec.optionalArgs.push( { name: arg.name, expr: arg.expr } );
       }
-      args.push(t.lexeme);
+      else {
+        argspec.restArg = arg.name;
+      }
     }
-    t = this.tokenizer.consume();
+    else {
+      argspec.requiredArgs.push(arg.name);
+    }
+  }
+
+  // number of arguments
+  argspec.defaultArgs = argspec.requiredArgs.length;
+  argspec.minArgs = argspec.requiredArgs.length;
+  argspec.maxArgs = argspec.restArg === undefined ? argspec.requiredArgs.length : -1;
+  t = this.tokenizer.consume();
+  if (t != undefined) {
+    if (t.type != token_ns.Enum.WORD) {
+      throw { message: "to doesn't like " + t.lexeme + ' as input' };
+    }
+    e = new Word(t.lexeme);
+    if (!e.isNumeric()) {
+      throw { message: "to doesn't like " + t.lexeme + ' as input' };
+    }
+    argspec.defaultArgs = e.jvalue;
   }
 
   // drop the TO and END lines, join and tokenize
@@ -491,8 +509,69 @@ Interpreter.prototype.parseToForm = function(input, env) {
   var tokenstream = this.tokenizer.tokenqueue;
 
   // bind this function in the global env
-  globalEnv.bindFunction(funcName, args, function(env) {
+  globalEnv.bindFunction(funcName, argspec, function(env) {
     var terp = new Interpreter();
     return terp.run(tokenstream.slice(0), env);
   }, src);
 };
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.parseToArg = function() {
+
+  t = this.tokenizer.consume();
+  if (t === undefined) {
+    return undefined;
+  }
+
+  if (t.type == token_ns.Enum.COLON) {
+    return { name: parseToArgName() };
+  }
+  else if (t.type == token_ns.Enum.LEFT_SQUARE_BRACKET) {
+    this.tokenizer.expect(':', { message: 'to expects a : after [' });
+    return { name: parseToArgName(),
+             expr: parseToArgExpr() };
+  }
+  else {
+    throw { message: "to doesn't like " + t.lexeme + ' as input' };
+  }
+
+  return undefined;
+}
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.parseToArgName = function() {
+
+  t = this.tokenizer.consume();
+  if (t === undefined || t.type != token_ns.Enum.WORD) {
+    throw { message: "to doesn't like " + t.lexeme + ' as input' };
+  }
+  return t.lexeme;
+}
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.parseToArgExpr = function() {
+
+  var depth = 1;
+  var expr = [];
+  var t = this.tokenizer.consume();
+  while (t != undefined) {
+    if (t.type == token_ns.Enum.LEFT_SQUARE_BRACKET) {
+      ++depth;
+      expr.push(t);
+    }
+    else if (t.type == token_ns.Enum.RIGHT_SQUARE_BRACKET) {
+      --depth;
+      if (depth == 0) {
+        return expr;
+      }
+      else {
+        expr.push(t);
+      }
+    }
+    else {
+      expr.push(t);
+    }
+    t = this.tokenizer.consume();
+  }
+  throw { message: 'to expects a ]' };
+}

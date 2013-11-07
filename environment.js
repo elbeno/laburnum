@@ -50,8 +50,8 @@ Environment.prototype.lookupVariable1 = function(name) {
 //------------------------------------------------------------------------------
 // we can bind functions and variables
 
-Environment.prototype.bindFunction = function(name, arglist, body, src) {
-  this.functions[name.toLowerCase()] = { 'name':name, 'arglist':arglist, 'body':body, src:src };
+Environment.prototype.bindFunction = function(name, argspec, body, src) {
+  this.functions[name.toLowerCase()] = { 'name':name, 'argspec':argspec, 'body':body, src:src };
 };
 
 Environment.prototype.bindVariable = function(name, value) {
@@ -83,15 +83,28 @@ Environment.prototype.eraseFunction = function(name) {
 //------------------------------------------------------------------------------
 // we can call functions
 
-Environment.prototype.callFunction = function(name, f, args, extraArgs) {
+Environment.prototype.callFunction = function(name, f, args) {
   var newEnv = new Environment(this);
+  var i = 0;
 
-  for (var i = 0; i < f.arglist.length; ++i) {
-    newEnv.bindVariable(f.arglist[i], args[i]);
+  // bind the required args
+  for (; i < f.argspec.requiredArgs.length; ++i) {
+    newEnv.bindVariable(f.argspec.requiredArgs[i], args[i]);
   }
 
-  if (extraArgs != undefined && extraArgs.length > 0) {
-    newEnv.bindVariable('[rest]', new List(extraArgs));
+  // bind any optional args passed in
+  var j = 0;
+  for (; i < args.length && j < f.argspec.optionalArgs.length; ++i, ++j) {
+    newEnv.bindVariable(f.argspec.optionalArgs[j].name, args[i]);
+  }
+
+  // evaluate defaults for remaining optionals
+  for (; j < f.argspec.optionalArgs.length; ++j) {
+  }
+
+  // bind the rest of the arguments
+  if (f.argspec.restArg != undefined) {
+    newEnv.bindVariable(f.argspec.restArg, new List(args.slice(i)));
   }
 
   return f.body.call(undefined, newEnv, name);

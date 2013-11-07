@@ -60,12 +60,12 @@ function Word(value) {
 Word.prototype = new Datum();
 
 //------------------------------------------------------------------------------
-Word.prototype.toString = function(delimeters) {
-  if (delimeters === undefined) {
-    delimeters = /[\s\[\]\(\)\{\}\+\-\*\/=<>]/;
+Word.prototype.toString = function(delimiters) {
+  if (delimiters === undefined) {
+    delimiters = /[\s\[\]\(\)\{\}\+\-\*\/=<>]/;
   }
   // we need to bar a word with special characters in it
-  if (!this.value || delimeters.test(this.value)) {
+  if (!this.value || delimiters.test(this.value)) {
     return '|' + this.value + '|';
   }
   return this.value;

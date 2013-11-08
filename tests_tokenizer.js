@@ -96,7 +96,14 @@ test( 'list', function() {
                {type:token_ns.Enum.WORD, lexeme:'+'},
                {type:token_ns.Enum.WORD, lexeme:'4'},
                {type:token_ns.Enum.RIGHT_SQUARE_BRACKET, lexeme:']'} ],
-             'List' );
+             'List [3 + 4]' );
+
+  tokenizer.tokenize('[1+2]');
+  deepEqual( tokenizer.tokenqueue,
+             [ {type:token_ns.Enum.LEFT_SQUARE_BRACKET, lexeme:'['},
+               {type:token_ns.Enum.WORD, lexeme:'1+2'},
+               {type:token_ns.Enum.RIGHT_SQUARE_BRACKET, lexeme:']'} ],
+             'List [1+2]' );
 });
 
 test( 'array', function() {

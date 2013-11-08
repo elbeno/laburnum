@@ -391,7 +391,9 @@ Interpreter.prototype.value = function(name, eatArgs) {
     }
 
     var e = this.relop();
-    args.push(e);
+    if (e != undefined) {
+      args.push(e);
+    }
   }
 
   if (args.length < f.argspec.minArgs) {
@@ -484,12 +486,14 @@ Interpreter.prototype.parseToForm = function(input, env) {
     else {
       argspec.requiredArgs.push(arg.name);
     }
+    arg = this.parseToArg();
   }
 
   // number of arguments
   argspec.defaultArgs = argspec.requiredArgs.length;
   argspec.minArgs = argspec.requiredArgs.length;
-  argspec.maxArgs = argspec.restArg === undefined ? argspec.requiredArgs.length : -1;
+  argspec.maxArgs = argspec.restArg === undefined ?
+    (argspec.requiredArgs.length  + argspec.optionalArgs.length) : -1;
   t = this.tokenizer.consume();
   if (t != undefined) {
     if (t.type != token_ns.Enum.WORD) {
@@ -524,12 +528,12 @@ Interpreter.prototype.parseToArg = function() {
   }
 
   if (t.type == token_ns.Enum.COLON) {
-    return { name: parseToArgName() };
+    return { name: this.parseToArgName() };
   }
   else if (t.type == token_ns.Enum.LEFT_SQUARE_BRACKET) {
-    this.tokenizer.expect(':', { message: 'to expects a : after [' });
-    return { name: parseToArgName(),
-             expr: parseToArgExpr() };
+    return { name: this.parseToArgName(),
+             expr: this.parseToArgExpr(),
+             optional: true };
   }
   else {
     throw { message: "to doesn't like " + t.lexeme + ' as input' };
@@ -545,6 +549,11 @@ Interpreter.prototype.parseToArgName = function() {
   if (t === undefined || t.type != token_ns.Enum.WORD) {
     throw { message: "to doesn't like " + t.lexeme + ' as input' };
   }
+  // strip off : if it's present
+  if (t.lexeme[0] == ':') {
+    return t.lexeme.substr(1);
+  }
+
   return t.lexeme;
 }
 

@@ -97,7 +97,7 @@ function If(env, name) {
     if (r2.isArray()) {
       throw { message: name + " doesn't like " + r2.toString() + ' as input' };
     }
-    return terp.interpret(r2].value, env);
+    return terp.interpret(r2.value, env);
   }
 
   return undefined;

@@ -98,8 +98,18 @@ Environment.prototype.callFunction = function(name, f, args) {
     newEnv.bindVariable(f.argspec.optionalArgs[j].name, args[i]);
   }
 
-  // evaluate defaults for remaining optionals
+  // evaluate defaults for remaining optionals and bind them in the new env
+  var terp = new Interpreter();
+  terp.env = newEnv;
+  terp.tokenizer = new Tokenizer();
   for (; j < f.argspec.optionalArgs.length; ++j) {
+    if (f.argspec.optionalArgs[j].expr != undefined) {
+      // re-tokenize the expression since it was in a list before
+      var input = f.argspec.optionalArgs[j].expr.map(
+        function(x) { return x.lexeme; }).join(' ');
+      terp.tokenizer.tokenize(input);
+      newEnv.bindVariable(f.argspec.optionalArgs[j].name, terp.toplevel());
+    }
   }
 
   // bind the rest of the arguments

@@ -56,10 +56,20 @@ Tokenizer.prototype.tokenize = function(s) {
                                     {type:token_ns.Enum.RIGHT_SQUARE_BRACKET, lexeme:']'});
       break;
 
+    case ']':
+      ++startIndex;
+      this.tokenqueue.push({type:token_ns.Enum.RIGHT_SQUARE_BRACKET, lexeme:c});
+      break;
+
     case '{': // begin array
       this.tokenqueue.push({type:token_ns.Enum.LEFT_CURLY_BRACKET, lexeme:c});
       startIndex = this.tokenizeList(s, ++startIndex,
                                      {type:token_ns.Enum.RIGHT_CURLY_BRACKET, lexeme:'}'});
+      break;
+
+    case '}':
+      ++startIndex;
+      this.tokenqueue.push({type:token_ns.Enum.RIGHT_CURLY_BRACKET, lexeme:c});
       break;
 
     case '@': // array base

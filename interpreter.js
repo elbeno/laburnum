@@ -216,38 +216,17 @@ Interpreter.prototype.expr = function() {
     return this.value(t.lexeme, false);
     break;
 
+  case token_ns.Enum.RIGHT_PAREN:
   case token_ns.Enum.RIGHT_SQUARE_BRACKET:
-    // right square bracket should be matched by list
-    throw { message: 'unexpected ]' };
+  case token_ns.Enum.RIGHT_CURLY_BRACKET:
+    // closing ), ], } should be matched elsewhere
+    throw { message: "unexpected '" + t.lexeme + "'" };
     break;
 
   case token_ns.Enum.LEFT_PAREN:
     // parenthesised expression
     this.tokenizer.consume();
-    t = this.tokenizer.peek();
-
-    if (t === undefined) {
-      throw { continuationPrompt: '~ ' };
-    }
-
-    if (t.type == token_ns.Enum.RIGHT_PAREN) {
-      throw { message: 'unexpected )' };
-    }
-
-    // if the next token is a word and is not numeric or boolean, treat it as a
-    // value, and if it's a function interpret arguments until the close paren
-    if (t.type == token_ns.Enum.WORD) {
-      e = new Word(t.lexeme);
-      if (!e.isNumeric() && !e.isBoolean()) {
-        this.tokenizer.consume();
-        return this.value(t.lexeme, true);
-      }
-    }
-
-    // a number or bool: start interpretation again at the top level
-    e = this.relop();
-    t = this.tokenizer.expect(')', { continuationPrompt: '~ ' });
-    return e;
+    return this.parenexpr();
     break;
 
   case token_ns.Enum.LEFT_SQUARE_BRACKET:
@@ -257,7 +236,7 @@ Interpreter.prototype.expr = function() {
     break;
 
   case token_ns.Enum.LEFT_CURLY_BRACKET:
-    // list
+    // array
     this.tokenizer.consume();
     return this.arrayexpr();
     break;
@@ -265,6 +244,30 @@ Interpreter.prototype.expr = function() {
 
   return undefined;
 };
+
+//------------------------------------------------------------------------------
+Interpreter.prototype.parenexpr = function() {
+  var t = this.tokenizer.peek();
+
+  if (t === undefined) {
+    throw { continuationPrompt: '~ ' };
+  }
+
+  // if the next token is a word and is not numeric or boolean, treat it as a
+  // value, and if it's a function eat arguments until the close paren
+  if (t.type == token_ns.Enum.WORD) {
+    e = new Word(t.lexeme);
+    if (!e.isNumeric() && !e.isBoolean()) {
+      this.tokenizer.consume();
+      return this.value(t.lexeme, true);
+    }
+  }
+
+  // a number or bool: start interpretation again at the top level
+  e = this.relop();
+  t = this.tokenizer.expect(')', { continuationPrompt: '~ ' });
+  return e;
+}
 
 //------------------------------------------------------------------------------
 Interpreter.prototype.listexpr = function() {

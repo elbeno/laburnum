@@ -1,14 +1,14 @@
 //------------------------------------------------------------------------------
 // Transmitters
 //------------------------------------------------------------------------------
-function Print(env) {
-  Type(env);
-  var repl = $('#repl');
-  repl.val(repl.val() + '\n');
+function Print(env, name) {
+  var stdout = env.lookupVariable('stdout');
+  Type(env, name, stdout);
+  stdout.write('\n');
 }
 
 //------------------------------------------------------------------------------
-function Type(env) {
+function TransmitInternal(env, stdout, fn) {
   var a = env.lookupVariable1('arg');
 
   var args = [a];
@@ -17,26 +17,22 @@ function Type(env) {
     args = args.concat(rest.values);
   }
 
-  var s = args.map(function(x) { return x.value; }).join(' ');
+  var s = args.map(fn).join(' ');
 
-  var repl = $('#repl');
-  repl.val(repl.val() + s);
+  if (stdout === undefined) {
+    stdout = env.lookupVariable('stdout');
+  }
+  stdout.write(s);
 }
 
 //------------------------------------------------------------------------------
-function Show(env) {
-  var a = env.lookupVariable1('arg');
+function Type(env, name, stdout) {
+  TransmitInternal(env, stdout, function(x) { return x.value; });
+}
 
-  var args = [a];
-  var rest = env.lookupVariable1('rest');
-  if (rest != undefined) {
-    args = args.concat(rest.values);
-  }
-
-  var s = args.map(function(x) { return x.toString(); }).join(' ');
-
-  var repl = $('#repl');
-  repl.val(repl.val() + s + '\n');
+//------------------------------------------------------------------------------
+function Show(env, name, stdout) {
+  TransmitInternal(env, stdout, function(x) { return x.toString(); });
 }
 
 //------------------------------------------------------------------------------

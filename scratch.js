@@ -56,6 +56,7 @@ function displayPrompt(target, msg)
 }
 
 $(document).ready(function() {
+  globalEnv.bindVariable('stdout', new Stdout('#repl'));
   var repl = $('#repl');
   displayPrompt(repl, welcomeMessage);
   repl.focus();

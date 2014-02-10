@@ -197,7 +197,7 @@ Interpreter.prototype.expr = function() {
   case token_ns.Enum.COLON:
     this.tokenizer.consume();
     t = this.tokenizer.consume();
-    e = this.env.lookupVariable(t.lexeme);
+    var e = this.env.lookupVariable(t.lexeme);
     if (e === undefined) {
       e = new Word(t.lexeme);
       throw { message: e.toString() + ' has no value' };
@@ -207,7 +207,7 @@ Interpreter.prototype.expr = function() {
 
   case token_ns.Enum.WORD:
     this.tokenizer.consume();
-    e = new Word(t.lexeme);
+    var e = new Word(t.lexeme);
     // number or bool -> return that
     if (e.isNumeric() || e.isBoolean()) {
       return e;
@@ -256,7 +256,7 @@ Interpreter.prototype.parenexpr = function() {
   // if the next token is a word and is not numeric or boolean, treat it as a
   // value, and if it's a function eat arguments until the close paren
   if (t.type == token_ns.Enum.WORD) {
-    e = new Word(t.lexeme);
+    var e = new Word(t.lexeme);
     if (!e.isNumeric() && !e.isBoolean()) {
       this.tokenizer.consume();
       return this.value(t.lexeme, true);
@@ -264,7 +264,7 @@ Interpreter.prototype.parenexpr = function() {
   }
 
   // a number or bool: start interpretation again at the top level
-  e = this.relop();
+  var e = this.relop();
   t = this.tokenizer.expect(')', { continuationPrompt: '~ ' });
   return e;
 }
@@ -354,7 +354,7 @@ Interpreter.prototype.arrayexpr = function() {
     // otherwise the base is 0
     t = this.tokenizer.peek();
     if (t != undefined && t.type == token_ns.Enum.WORD) {
-      e = new Word(t.lexeme);
+      var e = new Word(t.lexeme);
       if (e.isNumeric()) {
         base = e.jvalue;
       }

@@ -1,107 +1,115 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+/*global Word, List, globalEnv*/
+
 //------------------------------------------------------------------------------
-function FirstInternal(a, name) {
+function firstInternal(a, name) {
+  'use strict';
   if (a.isWord()) {
-    if (a.value.length == 0) {
+    if (a.value.length === 0) {
       throw { message: name + " doesn't like " + a.toString() + ' as input' };
     }
     return new Word(a.value[0]);
   }
-  else if (a.isList()) {
-    if (a.values.length == 0) {
+  if (a.isList()) {
+    if (a.values.length === 0) {
       throw { message: name + " doesn't like " + a.toString() + ' as input' };
     }
     return a.values[0];
   }
-  else {
-    return new Word(a.origin);
-  }
+  return new Word(a.origin);
 }
 
 //------------------------------------------------------------------------------
-function First(env) {
+function first(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
-  return FirstInternal(a, 'first');
+  return firstInternal(a, 'first');
 }
 
 //------------------------------------------------------------------------------
-function Firsts(env) {
+function firsts(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isList()) {
     throw { message: "firsts doesn't like " + a.toString() + ' as input' };
   }
 
-  var datums = a.values.map(function(x) {
-    return FirstInternal(x, 'firsts');
+  var datums = a.values.map(function (x) {
+    return firstInternal(x, 'firsts');
   });
 
   return new List(datums);
 }
 
 //------------------------------------------------------------------------------
-function Last(env) {
+function last(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (a.isWord() && a.value.length > 0) {
     return new Word(a.value[a.value.length - 1]);
   }
-  else if (a.isList() && a.values.length != 0) {
+  if (a.isList() && a.values.length !== 0) {
     return a.values[a.values.length - 1];
   }
   throw { message: "last doesn't like " + a.toString() + ' as input' };
 }
 
 //------------------------------------------------------------------------------
-function ButFirstInternal(a, name) {
+function butFirstInternal(a, name) {
+  'use strict';
   if (a.isWord()) {
-    if (a.value.length == 0) {
+    if (a.value.length === 0) {
       throw { message: name + " doesn't like " + a.toString() + ' as input' };
     }
     return new Word(a.value.substring(1));
   }
-  else if (a.isList()) {
-    if (a.values.length == 0) {
+  if (a.isList()) {
+    if (a.values.length === 0) {
       throw { message: name + " doesn't like " + a.toString() + ' as input' };
     }
     return new List(a.values.slice(1));
   }
-  else {
-    throw { message: name + " doesn't like " + a.toString() + ' as input' };
-  }
+  throw { message: name + " doesn't like " + a.toString() + ' as input' };
 }
 
 //------------------------------------------------------------------------------
-function ButFirst(env, name) {
+function butFirst(env, name) {
+  'use strict';
   var a = env.lookupVariable1('a');
-  return ButFirstInternal(a, name);
+  return butFirstInternal(a, name);
 }
 
 //------------------------------------------------------------------------------
-function ButFirsts(env, name) {
+function butFirsts(env, name) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isList()) {
     throw { message: name + " doesn't like " + a.toString() + ' as input' };
   }
 
-  var datums = a.values.map(function(x) {
-    return ButFirstInternal(x, name);
+  var datums = a.values.map(function (x) {
+    return butFirstInternal(x, name);
   });
 
   return new List(datums);
 }
 
 //------------------------------------------------------------------------------
-function ButLast(env, name) {
+function butLast(env, name) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (a.isWord() && a.value.length > 0) {
     return new Word(a.value.substring(0, a.value.length - 1));
   }
-  else if (a.isList() && a.values.length != 0) {
+  if (a.isList() && a.values.length !== 0) {
     return new List(a.values.slice(0, a.values.length - 1));
   }
   throw { message: name + " doesn't like " + a.toString() + ' as input' };
 }
 
 //------------------------------------------------------------------------------
-function Item(env) {
+function item(env) {
+  'use strict';
   var i = env.lookupVariable1('i');
   if (!i.isNumeric()) {
     throw { message: "item doesn't like " + i.toString() + ' as input' };
@@ -118,13 +126,13 @@ function Item(env) {
     }
     throw { message: "item doesn't like " + i.toString() + ' as input' };
   }
-  else if (a.isList()) {
+  if (a.isList()) {
     if (idx >= 0 && a.values.length > idx) {
       return a.values[idx];
     }
     throw { message: "item doesn't like " + i.toString() + ' as input' };
   }
-  else if (a.isArray()) {
+  if (a.isArray()) {
     // Arrays have an arbitrary base, so use the actual index value.
     return a.atIndex(i.jvalue, { message: "item doesn't like " + i.toString() + ' as input' });
   }
@@ -133,49 +141,50 @@ function Item(env) {
 }
 
 //------------------------------------------------------------------------------
-function InstallBuiltins_Selectors(env) {
+function installBuiltins_Selectors(env) {
+  'use strict';
 
   env.bindFunction('first',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   First, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   first, '');
   env.bindFunction('firsts',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Firsts, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   firsts, '');
   env.bindFunction('last',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Last, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   last, '');
   env.bindFunction('butfirst',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ButFirst, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   butFirst, '');
   env.bindFunction('bf',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ButFirst, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   butFirst, '');
   env.bindFunction('butfirsts',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ButFirsts, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   butFirsts, '');
   env.bindFunction('bfs',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ButFirsts, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   butFirsts, '');
   env.bindFunction('butlast',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ButLast, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   butLast, '');
   env.bindFunction('bl',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ButLast, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   butLast, '');
   env.bindFunction('item',
-                   { requiredArgs:['i', 'a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Item, '');
+                   { requiredArgs: ['i', 'a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   item, '');
   // TODO: mditem, pick, remove, remdup, quoted (library functions)
 }
 
-InstallBuiltins_Selectors(globalEnv);
+installBuiltins_Selectors(globalEnv);

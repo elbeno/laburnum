@@ -1,38 +1,47 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+
 //------------------------------------------------------------------------------
 function Datum() {
+  'use strict';
 }
 
 //------------------------------------------------------------------------------
-Datum.prototype.isNumeric = function() {
-  return this.type == 'numeric';
+Datum.prototype.isNumeric = function () {
+  'use strict';
+  return this.type === 'numeric';
 };
 
 //------------------------------------------------------------------------------
-Datum.prototype.isBoolean = function() {
-  return this.type == 'boolean';
+Datum.prototype.isBoolean = function () {
+  'use strict';
+  return this.type === 'boolean';
 };
 
 //------------------------------------------------------------------------------
-Datum.prototype.isWord = function() {
-  return this.type != 'list' && this.type != 'array';
+Datum.prototype.isWord = function () {
+  'use strict';
+  return this.type !== 'list' && this.type !== 'array';
 };
 
 //------------------------------------------------------------------------------
-Datum.prototype.isList = function() {
-  return this.type == 'list';
+Datum.prototype.isList = function () {
+  'use strict';
+  return this.type === 'list';
 };
 
 //------------------------------------------------------------------------------
-Datum.prototype.isArray = function() {
-  return this.type == 'array';
+Datum.prototype.isArray = function () {
+  'use strict';
+  return this.type === 'array';
 };
 
 //------------------------------------------------------------------------------
 function Word(value) {
+  'use strict';
   this.value = value.toString();
 
-  if (this.value[0] == '|' && this.value[value.length-1] == '|') {
-    this.value = this.value.substring(1, value.length-1);
+  if (this.value[0] === '|' && this.value[value.length - 1] === '|') {
+    this.value = this.value.substring(1, value.length - 1);
   }
 
   // try to make a number
@@ -43,12 +52,12 @@ function Word(value) {
   }
 
   // otherwise, try to make a boolean
-  if (this.value.toLowerCase() == 'true') {
+  if (this.value.toLowerCase() === 'true') {
     this.jvalue = true;
     this.type = 'boolean';
     return;
   }
-  else if (this.value.toLowerCase() == 'false') {
+  if (this.value.toLowerCase() === 'false') {
     this.jvalue = false;
     this.type = 'boolean';
     return;
@@ -60,7 +69,8 @@ function Word(value) {
 Word.prototype = new Datum();
 
 //------------------------------------------------------------------------------
-Word.prototype.toString = function(delimiters) {
+Word.prototype.toString = function (delimiters) {
+  'use strict';
   if (delimiters === undefined) {
     delimiters = /[\s\[\]\(\)\{\}\+\-\*\/=<>]/;
   }
@@ -73,6 +83,7 @@ Word.prototype.toString = function(delimiters) {
 
 //------------------------------------------------------------------------------
 function List(values) {
+  'use strict';
   this.type = 'list';
   this.values = values;
   this.value = this.toBareString();
@@ -81,17 +92,20 @@ function List(values) {
 List.prototype = new Datum();
 
 //------------------------------------------------------------------------------
-List.prototype.toBareString = function() {
-  return this.values.map(function(x) { return x.toString(/[\s\[\]]/); }).join(' ');
+List.prototype.toBareString = function () {
+  'use strict';
+  return this.values.map(function (x) { return x.toString(/[\s\[\]]/); }).join(' ');
 };
 
 //------------------------------------------------------------------------------
-List.prototype.toString = function() {
+List.prototype.toString = function () {
+  'use strict';
   return '[' + this.toBareString() + ']';
 };
 
 //------------------------------------------------------------------------------
 function LArray(values, base) {
+  'use strict';
   this.type = 'array';
   this.values = values;
   this.origin = base;
@@ -101,12 +115,14 @@ function LArray(values, base) {
 LArray.prototype = new Datum();
 
 //------------------------------------------------------------------------------
-LArray.prototype.toString = function() {
-  return '{' + this.values.map(function(x) { return x.toString(/[\s\[\]\{\}]/); }).join(' ') + '}';
+LArray.prototype.toString = function () {
+  'use strict';
+  return '{' + this.values.map(function (x) { return x.toString(/[\s\[\]\{\}]/); }).join(' ') + '}';
 };
 
 //------------------------------------------------------------------------------
-LArray.prototype.computeIndex = function(index, err) {
+LArray.prototype.computeIndex = function (index, err) {
+  'use strict';
   if (index < this.origin || (index  - this.origin) >= this.values.length) {
     throw err;
   }
@@ -114,6 +130,7 @@ LArray.prototype.computeIndex = function(index, err) {
 };
 
 //------------------------------------------------------------------------------
-LArray.prototype.atIndex = function(index, err) {
+LArray.prototype.atIndex = function (index, err) {
+  'use strict';
   return this.values[this.computeIndex(index, err)];
 };

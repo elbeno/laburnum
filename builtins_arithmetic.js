@@ -1,7 +1,11 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, todo:true, vars:true */
+/*global Word, globalEnv*/
+
 //------------------------------------------------------------------------------
-function Reducer(env, f, init) {
+function reducer(env, f, init) {
+  'use strict';
   var args = env.lookupVariable1('rest').values;
-  if (args == undefined) {
+  if (args === undefined) {
     args = [];
   }
 
@@ -9,12 +13,13 @@ function Reducer(env, f, init) {
 }
 
 //------------------------------------------------------------------------------
-var Sum = function(env) {
-  return Reducer(env, function(a, b) {
-    if (b == undefined) {
+var sum = function (env) {
+  'use strict';
+  return reducer(env, function (a, b) {
+    if (b === undefined) {
       return a;
     }
-    if (b.type != 'numeric') {
+    if (b.type !== 'numeric') {
       throw { message: "sum doesn't like " + b.toString() + ' as input' };
     }
     return a + b.jvalue;
@@ -22,7 +27,8 @@ var Sum = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Difference = function(env) {
+var difference = function (env) {
+  'use strict';
   var a  = env.lookupVariable1('a');
   if (!a.isNumeric()) {
     throw { message: "difference doesn't like " + a.toString() + ' as input' };
@@ -35,7 +41,8 @@ var Difference = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Minus = function(env) {
+var minus = function (env) {
+  'use strict';
   var a  = env.lookupVariable1('a');
   if (!a.isNumeric()) {
     throw { message: "minus doesn't like " + a.toString() + ' as input' };
@@ -44,12 +51,13 @@ var Minus = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Product = function(env) {
-  return Reducer(env, function(a, b) {
-    if (b == undefined) {
+var product = function (env) {
+  'use strict';
+  return reducer(env, function (a, b) {
+    if (b === undefined) {
       return a;
     }
-    if (b.type != 'numeric') {
+    if (b.type !== 'numeric') {
       throw { message: "product doesn't like " + b.toString() + ' as input' };
     }
     return a * b.jvalue;
@@ -57,7 +65,8 @@ var Product = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Quotient = function(env) {
+var quotient = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -65,19 +74,18 @@ var Quotient = function(env) {
   }
 
   var b = env.lookupVariable1('b');
-  if (b != undefined) {
+  if (b !== undefined) {
     if (!b.isNumeric()) {
       throw { message: "quotient doesn't like " + b.toString() + ' as input' };
     }
-    return new Word(a.jvalue / b.jvalue)
+    return new Word(a.jvalue / b.jvalue);
   }
-  else {
-    return new Word(1 / a.jvalue);
-  }
+  return new Word(1 / a.jvalue);
 };
 
 //------------------------------------------------------------------------------
-var Mod = function(env, name, signmatch) {
+var mod = function (env, name, signmatch) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -86,41 +94,44 @@ var Mod = function(env, name, signmatch) {
 
   var b = env.lookupVariable1('b');
   if (!b.isNumeric()) {
-    throw { message: name +" doesn't like " + b.toString() + ' as input' };
+    throw { message: name + " doesn't like " + b.toString() + ' as input' };
   }
 
   var c = a.jvalue % b.jvalue;
 
-  if (signmatch == 'b' && a.jvalue * b.jvalue < 0)
-  {
+  if (signmatch === 'b' && a.jvalue * b.jvalue < 0) {
     return new Word(b.jvalue + c);
   }
   return new Word(c);
 };
 
 //------------------------------------------------------------------------------
-var Remainder = function(env) {
-  return Mod(env, 'remainder', 'a');
-}
+var remainder = function (env) {
+  'use strict';
+  return mod(env, 'remainder', 'a');
+};
 
 //------------------------------------------------------------------------------
-var Modulo = function(env) {
-  return Mod(env, 'modulo', 'b');
-}
+var modulo = function (env) {
+  'use strict';
+  return mod(env, 'modulo', 'b');
+};
 
 //------------------------------------------------------------------------------
-var Int = function(env) {
+var toInt = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
     throw { message: "int doesn't like " + a.toString() + ' as input' };
   }
 
-  return new Word(0|a.jvalue);
+  return new Word(a.jvalue | 0);
 };
 
 //------------------------------------------------------------------------------
-var Round = function(env) {
+var round = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -131,7 +142,8 @@ var Round = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Sqrt = function(env) {
+var sqrt = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -142,7 +154,8 @@ var Sqrt = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Power = function(env) {
+var power = function (env) {
+  'use strict';
   var a  = env.lookupVariable1('a');
   if (!a.isNumeric()) {
     throw { message: "power doesn't like " + a.toString() + ' as input' };
@@ -155,7 +168,8 @@ var Power = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Exp = function(env) {
+var exp = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -166,7 +180,8 @@ var Exp = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Log10 = function(env) {
+var log10 = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -177,7 +192,8 @@ var Log10 = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Ln = function(env) {
+var ln = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -188,7 +204,8 @@ var Ln = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Sin = function(env) {
+var sin = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -199,7 +216,8 @@ var Sin = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Radsin = function(env) {
+var radsin = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -210,7 +228,8 @@ var Radsin = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Cos = function(env) {
+var cos = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -221,7 +240,8 @@ var Cos = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Radcos = function(env) {
+var radcos = function (env) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -232,7 +252,8 @@ var Radcos = function(env) {
 };
 
 //------------------------------------------------------------------------------
-var Atan = function(env, name) {
+var atan = function (env, name) {
+  'use strict';
 
   var a = env.lookupVariable1('a');
   if (!a.isNumeric()) {
@@ -240,121 +261,122 @@ var Atan = function(env, name) {
   }
 
   var b = env.lookupVariable1('b');
-  if (b != undefined) {
+  if (b !== undefined) {
     if (!b.isNumeric()) {
       throw { message: name + " doesn't like " + b.toString() + ' as input' };
     }
 
-    if (a.jvalue == 0) {
+    if (a.jvalue === 0) {
       if (b.jvalue > 0) {
-        return new Word(Math.PI/2);
+        return new Word(Math.PI / 2);
       }
-      else if (b.jvalue < 0) {
-        return new Word(-Math.PI/2);
+      if (b.jvalue < 0) {
+        return new Word(-Math.PI / 2);
       }
       return new Word('0');
     }
     return new Word(Math.atan(b.jvalue / a.jvalue));
   }
-  else {
-    return new Word(Math.atan(a.jvalue));
-  }
+  return new Word(Math.atan(a.jvalue));
 };
 
 //------------------------------------------------------------------------------
-var Arctan = function(env) {
-  var ret = Atan(env, 'arctan');
+var arctan = function (env) {
+  'use strict';
+  var ret = atan(env, 'arctan');
   return new Word(ret.jvalue / Math.PI * 180);
 };
 
 //------------------------------------------------------------------------------
-var Radarctan = function(env) {
-  return Atan(env, 'radarctan');
+var radarctan = function (env) {
+  'use strict';
+  return atan(env, 'radarctan');
 };
 
 //------------------------------------------------------------------------------
-function InstallBuiltins_Arithmetic(env) {
+function installBuiltins_Arithmetic(env) {
+  'use strict';
 
   env.bindFunction('sum',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   Sum, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 2, maxArgs: -1, minArgs: 1 },
+                   sum, '');
   env.bindFunction('difference',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Difference, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   difference, '');
   env.bindFunction('minus',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Minus, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   minus, '');
   env.bindFunction('product',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   Product, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 2, maxArgs: -1, minArgs: 1 },
+                   product, '');
   env.bindFunction('quotient',
-                   { requiredArgs:['a'], optionalArgs:[{name:'b'}], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:1 },
-                   Quotient, '');
+                   { requiredArgs: ['a'], optionalArgs: [{name: 'b'}], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 1 },
+                   quotient, '');
   env.bindFunction('remainder',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Remainder, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   remainder, '');
   env.bindFunction('modulo',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Modulo, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   modulo, '');
   env.bindFunction('int',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Int, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   toInt, '');
   env.bindFunction('round',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Round, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   round, '');
   env.bindFunction('sqrt',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Sqrt, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   sqrt, '');
   env.bindFunction('power',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Power, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   power, '');
   env.bindFunction('exp',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Exp, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   exp, '');
   env.bindFunction('log10',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Log10, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   log10, '');
   env.bindFunction('ln',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Ln, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   ln, '');
   env.bindFunction('sin',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Sin, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   sin, '');
   env.bindFunction('radsin',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Radsin, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   radsin, '');
   env.bindFunction('cos',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Cos, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   cos, '');
   env.bindFunction('radcos',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Radcos, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   radcos, '');
   env.bindFunction('arctan',
-                   { requiredArgs:['a'], optionalArgs:[{name:'b'}], restArg:undefined,
-                     defaultArgs:1, maxArgs:2, minArgs:1 },
-                   Arctan, '');
+                   { requiredArgs: ['a'], optionalArgs: [{name: 'b'}], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 2, minArgs: 1 },
+                   arctan, '');
   env.bindFunction('radarctan',
-                   { requiredArgs:['a'], optionalArgs:[{name:'b'}], restArg:undefined,
-                     defaultArgs:1, maxArgs:2, minArgs:1 },
-                   Radarctan, '');
+                   { requiredArgs: ['a'], optionalArgs: [{name: 'b'}], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 2, minArgs: 1 },
+                   radarctan, '');
   // TODO: rseq library function
   // TODO: iseq library function
 
@@ -365,4 +387,4 @@ function InstallBuiltins_Arithmetic(env) {
   // TODO: greaterequalp, greaterequal?
 }
 
-InstallBuiltins_Arithmetic(globalEnv);
+installBuiltins_Arithmetic(globalEnv);

@@ -1,44 +1,46 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+/*global Word, List, globalEnv, equalPInternal*/
+
 //------------------------------------------------------------------------------
-function Count(env) {
+function count(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (a.isWord()) {
     return new Word(a.value.length);
   }
-  else {
-    return new Word(a.values.length);
-  }
+  return new Word(a.values.length);
 }
 
 //------------------------------------------------------------------------------
-function Ascii(env) {
+function ascii(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isWord() || a.value.length > 1) {
     throw "ascii doesn't like " + a.toString() + ' as input';
   }
-  else {
-    return new Word(a.value.charCodeAt(0));
-  }
+  return new Word(a.value.charCodeAt(0));
 }
 
 //------------------------------------------------------------------------------
-function Char(env) {
+function char(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isNumeric() || a.jvalue < 0 || a.jvalue > 255) {
     throw "ascii doesn't like " + a.toString() + ' as input';
   }
-  else {
-    return new Word(String.fromCharCode(a.jvalue));
-  }
+  return new Word(String.fromCharCode(a.jvalue));
 }
 
 //------------------------------------------------------------------------------
-function Member(env) {
+function member(env) {
+  'use strict';
+  var i;
   var a = env.lookupVariable1('a');
   var b = env.lookupVariable1('b');
 
   if (b.isWord()) {
     if (a.isWord()
-        && a.value.length == 1) {
+        && a.value.length === 1) {
       // TODO: CASEIGNOREDP
       var re = new RegExp(a.value + '.*');
       var result = b.value.match(re);
@@ -49,9 +51,9 @@ function Member(env) {
     }
     return new Word('');
   }
-  else if (b.isList()) {
-    for (var i = 0; i < b.values.length; ++i) {
-      if (EqualPInternal(a, b.values[i])) {
+  if (b.isList()) {
+    for (i = 0; i < b.values.length; ++i) {
+      if (equalPInternal(a, b.values[i])) {
         return new List(b.values.slice(i));
       }
     }
@@ -62,62 +64,56 @@ function Member(env) {
 }
 
 //------------------------------------------------------------------------------
-function LowerCase(env) {
+function lowerCase(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isWord()) {
     throw "lowercase doesn't like " + a.toString() + ' as input';
   }
-  else {
-    return new Word(a.value.toLowerCase());
-  }
+  return new Word(a.value.toLowerCase());
 }
 
 //------------------------------------------------------------------------------
-function UpperCase(env) {
+function upperCase(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isWord()) {
     throw "uppercase doesn't like " + a.toString() + ' as input';
   }
-  else {
-    return new Word(a.value.toUpperCase());
-  }
+  return new Word(a.value.toUpperCase());
 }
 
 //------------------------------------------------------------------------------
-function InstallBuiltins_Queries(env) {
-
-  env.bindFunction('sum',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   Sum, '');
+function installBuiltins_Queries(env) {
+  'use strict';
 
   // Queries
   env.bindFunction('count',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Count, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   count, '');
   env.bindFunction('ascii',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Ascii, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   ascii, '');
   env.bindFunction('char',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Char, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   char, '');
   env.bindFunction('member',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Member, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   member, '');
   env.bindFunction('lowercase',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   LowerCase, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   lowerCase, '');
   env.bindFunction('uppercase',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   UpperCase, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   upperCase, '');
   // TODO: rawascii
   // TODO: standout, parse, runparse
 }
 
-InstallBuiltins_Queries(globalEnv);
+installBuiltins_Queries(globalEnv);

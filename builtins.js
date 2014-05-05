@@ -1,19 +1,16 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+/*global $, globalEnv*/
+
 //------------------------------------------------------------------------------
 // Transmitters
 //------------------------------------------------------------------------------
-function Print(env, name) {
-  var stdout = env.lookupVariable('stdout');
-  Type(env, name, stdout);
-  stdout.write('\n');
-}
-
-//------------------------------------------------------------------------------
-function TransmitInternal(env, stdout, fn) {
+function transmitInternal(env, stdout, fn) {
+  'use strict';
   var a = env.lookupVariable1('arg');
 
   var args = [a];
   var rest = env.lookupVariable1('rest');
-  if (rest != undefined) {
+  if (rest !== undefined) {
     args = args.concat(rest.values);
   }
 
@@ -26,19 +23,32 @@ function TransmitInternal(env, stdout, fn) {
 }
 
 //------------------------------------------------------------------------------
-function Type(env, name, stdout) {
-  TransmitInternal(env, stdout, function(x) { return x.value; });
+/*jslint unparam: true*/
+function type(env, name, stdout) {
+  'use strict';
+  transmitInternal(env, stdout, function (x) { return x.value; });
 }
 
 //------------------------------------------------------------------------------
-function Show(env, name, stdout) {
-  TransmitInternal(env, stdout, function(x) { return x.toString(); });
+function show(env, name, stdout) {
+  'use strict';
+  transmitInternal(env, stdout, function (x) { return x.toString(); });
+}
+/*jslint unparam: false*/
+
+//------------------------------------------------------------------------------
+function print(env, name) {
+  'use strict';
+  var stdout = env.lookupVariable('stdout');
+  type(env, name, stdout);
+  stdout.write('\n');
 }
 
 //------------------------------------------------------------------------------
 // Inspection
 //------------------------------------------------------------------------------
-function Printout(env, name) {
+function printout(env, name) {
+  'use strict';
   var n = env.lookupVariable1('name');
   if (n.isArray()) {
     throw { message: name + " doesn't like " + n.toString() + ' as input' };
@@ -49,10 +59,9 @@ function Printout(env, name) {
   if (f.src === undefined) {
     throw { message: "I don't know how to " + n.toString() };
   }
-  else if (f.src != '') {
+  if (f.src !== '') {
     repl.val(repl.val() + f.src + '\n');
-  }
-  else {
+  } else {
     repl.val(repl.val() + n.toString() + ' is a primitive\n');
   }
 }
@@ -60,7 +69,8 @@ function Printout(env, name) {
 //------------------------------------------------------------------------------
 // Workspace control
 //------------------------------------------------------------------------------
-function Erase(env) {
+function erase(env) {
+  'use strict';
   var n = env.lookupVariable1('name');
   if (n.isArray()) {
     throw { message: "erase doesn't like " + n.toString() + ' as input' };
@@ -70,41 +80,42 @@ function Erase(env) {
 }
 
 //------------------------------------------------------------------------------
-function InstallBuiltins(env) {
+function installBuiltins(env) {
+  'use strict';
 
   // Transmitters
   env.bindFunction('print',
-                   { requiredArgs:['arg'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Print, '');
+                   { requiredArgs: ['arg'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   print, '');
   env.bindFunction('pr',
-                   { requiredArgs:['arg'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Print, '');
+                   { requiredArgs: ['arg'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   print, '');
   env.bindFunction('type',
-                   { requiredArgs:['arg'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Type, '');
+                   { requiredArgs: ['arg'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   type, '');
   env.bindFunction('show',
-                   { requiredArgs:['arg'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Show, '');
+                   { requiredArgs: ['arg'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   show, '');
 
   // Inspection
   env.bindFunction('printout',
-                   { requiredArgs:['name'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Printout, '');
+                   { requiredArgs: ['name'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   printout, '');
   env.bindFunction('po',
-                   { requiredArgs:['name'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Printout, '');
+                   { requiredArgs: ['name'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   printout, '');
 
   // Workspace control
   env.bindFunction('erase',
-                   { requiredArgs:['name'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Erase, '');
+                   { requiredArgs: ['name'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   erase, '');
 }
 
-InstallBuiltins(globalEnv);
+installBuiltins(globalEnv);

@@ -1,5 +1,9 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+/*global Datum, globalEnv*/
+
 //------------------------------------------------------------------------------
-function Make(env, name) {
+function make(env, name) {
+  'use strict';
   var n = env.lookupVariable1('name');
 
   if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
@@ -11,7 +15,8 @@ function Make(env, name) {
 }
 
 //------------------------------------------------------------------------------
-function LocalInternal(env, name, defEnv) {
+function localInternal(env, name, defEnv) {
+  'use strict';
   var n = env.lookupVariable1('name');
 
   var args = [];
@@ -21,11 +26,11 @@ function LocalInternal(env, name, defEnv) {
     args = [n];
   }
   var rest = env.lookupVariable1('rest');
-  if (rest != undefined) {
+  if (rest !== undefined) {
     args = args.concat(rest.values);
   }
 
-  args.map(function(n) {
+  args.map(function (n) {
     if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
       throw { message: name + " doesn't like " + n.toString() + ' as input' };
     }
@@ -34,12 +39,14 @@ function LocalInternal(env, name, defEnv) {
 }
 
 //------------------------------------------------------------------------------
-function Local(env, name) {
-  LocalInternal(env, name, env);
+function local(env, name) {
+  'use strict';
+  localInternal(env, name, env);
 }
 
 //------------------------------------------------------------------------------
-function LocalMake(env) {
+function localMake(env) {
+  'use strict';
   var n = env.lookupVariable1('name');
 
   if (!n.isWord() || n.isNumeric() || n.isBoolean()) {
@@ -51,7 +58,8 @@ function LocalMake(env) {
 }
 
 //------------------------------------------------------------------------------
-function Thing(env) {
+function thing(env) {
+  'use strict';
   var n = env.lookupVariable1('name');
   var e = env.lookupVariable(n.value);
   if (e === undefined || e.type === undefined) {
@@ -61,37 +69,39 @@ function Thing(env) {
 }
 
 //------------------------------------------------------------------------------
-function Global(env, name) {
-  LocalInternal(env, name, globalEnv);
+function global(env, name) {
+  'use strict';
+  localInternal(env, name, globalEnv);
 }
 
 //------------------------------------------------------------------------------
-function InstallBuiltins_Variables(env) {
+function installBuiltins_Variables(env) {
+  'use strict';
 
   env.bindFunction('make',
-                   { requiredArgs:['name', 'value'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Make, '');
+                   { requiredArgs: ['name', 'value'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   make, '');
   env.bindFunction('name',
-                   { requiredArgs:['value', 'name'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Make, '');
+                   { requiredArgs: ['value', 'name'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   make, '');
   env.bindFunction('local',
-                   { requiredArgs:['name'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Local, '');
+                   { requiredArgs: ['name'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   local, '');
   env.bindFunction('localmake',
-                   { requiredArgs:['name', 'value'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   LocalMake, '');
+                   { requiredArgs: ['name', 'value'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   localMake, '');
   env.bindFunction('thing',
-                   { requiredArgs:['name'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Thing, '');
+                   { requiredArgs: ['name'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   thing, '');
   env.bindFunction('global',
-                   { requiredArgs:['name'], optionalArgs:[], restArg:'rest',
-                     defaultArgs:1, maxArgs:-1, minArgs:1 },
-                   Global, '');
+                   { requiredArgs: ['name'], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 1, maxArgs: -1, minArgs: 1 },
+                   global, '');
 }
 
-InstallBuiltins_Variables(globalEnv);
+installBuiltins_Variables(globalEnv);

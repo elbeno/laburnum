@@ -1,73 +1,86 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+/*global Word, globalEnv*/
+
 //------------------------------------------------------------------------------
-var WordP = function(env) {
+var wordP = function (env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   return new Word(a.isWord().toString());
 };
 
 //------------------------------------------------------------------------------
-var ListP = function(env) {
+var listP = function (env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   return new Word(a.isList().toString());
 };
 
 //------------------------------------------------------------------------------
-var ArrayP = function(env) {
+var arrayP = function (env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   return new Word(a.isArray().toString());
 };
 
 //------------------------------------------------------------------------------
-var EmptyP = function(env) {
+var emptyP = function (env) {
+  'use strict';
   var a = env.lookupVariable1('a');
-  var empty = a.value == '' || (a.isArray() && a.value == '{}');
+  var empty = a.value === '' || (a.isArray() && a.value === '{}');
   return new Word(empty.toString());
 };
 
 //------------------------------------------------------------------------------
-var EqualPInternal = function(a, b) {
-  if (a.type != b.type) {
+var equalPInternal = function (a, b) {
+  'use strict';
+  var i;
+
+  if (a.type !== b.type) {
     return false;
   }
 
   if (a.isNumeric() || a.isBoolean()) {
-    return a.jvalue == b.jvalue;
+    return a.jvalue === b.jvalue;
   }
-  else if (a.isWord()) {
+  if (a.isWord()) {
     // TODO: CASEIGNOREDP
-    return a.value == b.value;
+    return a.value === b.value;
   }
-  else if (a.isList()) {
-    for (var i = 0; i < a.values.length; ++i) {
-      if (i >= b.values.length || !EqualPInternal(a.values[i], b.values[i])) {
+  if (a.isList()) {
+    for (i = 0; i < a.values.length; ++i) {
+      if (i >= b.values.length || !equalPInternal(a.values[i], b.values[i])) {
         return false;
       }
     }
     return true;
   }
-  else if (a.isArray()) {
+  if (a.isArray()) {
     // TODO: array references
     return false;
   }
 
   return false;
-}
-
-var EqualP = function(env) {
-  var a = env.lookupVariable1('a');
-  var b = env.lookupVariable1('b');
-
-  return new Word(EqualPInternal(a, b).toString());
 };
 
-var NotEqualP = function(env) {
+var equalP = function (env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   var b = env.lookupVariable1('b');
 
-  return new Word((!EqualPInternal(a, b)).toString());
+  return new Word(equalPInternal(a, b).toString());
+};
+
+var notEqualP = function (env) {
+  'use strict';
+  var a = env.lookupVariable1('a');
+  var b = env.lookupVariable1('b');
+
+  return new Word((!equalPInternal(a, b)).toString());
 };
 
 //------------------------------------------------------------------------------
-var BeforeP = function(env, name) {
+var beforeP = function (env, name) {
+  'use strict';
   var a = env.lookupVariable1('a');
   if (!a.isWord()) {
     throw { message: name + " doesn't like " + a.toString + ' as input' };
@@ -81,24 +94,24 @@ var BeforeP = function(env, name) {
 };
 
 //------------------------------------------------------------------------------
-var MemberP = function(env, name) {
+var memberP = function (env, name) {
+  'use strict';
+  var i;
   var a = env.lookupVariable1('a');
   var b = env.lookupVariable1('b');
 
   if (b.isWord()) {
     if (a.isWord()
-        && a.value.length == 1) {
+        && a.value.length === 1) {
       // TODO: CASEIGNOREDP
       var re = new RegExp(a.value);
       return new Word(re.test(b.value).toString());
     }
     return new Word('false');
   }
-  else {
-    for (var i = 0; i < b.values.length; ++i) {
-      if (EqualPInternal(a, b.values[i])) {
-        return new Word('true');
-      }
+  for (i = 0; i < b.values.length; ++i) {
+    if (equalPInternal(a, b.values[i])) {
+      return new Word('true');
     }
   }
 
@@ -106,7 +119,8 @@ var MemberP = function(env, name) {
 };
 
 //------------------------------------------------------------------------------
-var SubstringP = function(env, name) {
+var substringP = function (env, name) {
+  'use strict';
   var a = env.lookupVariable1('a');
   var b = env.lookupVariable1('b');
 
@@ -120,98 +134,100 @@ var SubstringP = function(env, name) {
 };
 
 //------------------------------------------------------------------------------
-var NumberP = function(env) {
+var numberP = function(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
   return new Word(a.isNumeric().toString());
 };
 
 //------------------------------------------------------------------------------
-function InstallBuiltins_Predicates(env) {
+function installBuiltins_Predicates(env) {
+  'use strict';
 
   env.bindFunction('wordp',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   WordP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   wordP, '');
   env.bindFunction('word?',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   WordP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   wordP, '');
   env.bindFunction('listp',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ListP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   listP, '');
   env.bindFunction('list?',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ListP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   listP, '');
   env.bindFunction('arrayp',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ArrayP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   arrayP, '');
   env.bindFunction('array?',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ArrayP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   arrayP, '');
   env.bindFunction('emptyp',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   EmptyP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   emptyP, '');
   env.bindFunction('empty?',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   EmptyP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   emptyP, '');
   env.bindFunction('equalp',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   EqualP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   equalP, '');
   env.bindFunction('equal?',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   EqualP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   equalP, '');
   env.bindFunction('notequalp',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   NotEqualP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   notEqualP, '');
   env.bindFunction('notequal?',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   NotEqualP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   notEqualP, '');
   env.bindFunction('beforep',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   BeforeP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   beforeP, '');
   env.bindFunction('before?',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   BeforeP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   beforeP, '');
   env.bindFunction('memberp',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   MemberP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   memberP, '');
   env.bindFunction('member?',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   MemberP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   memberP, '');
   env.bindFunction('substringp',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   SubstringP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   substringP, '');
   env.bindFunction('substring?',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   SubstringP, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   substringP, '');
   env.bindFunction('numberp',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   NumberP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   numberP, '');
   env.bindFunction('number?',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   NumberP, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   numberP, '');
 
   // TODO: .eq
   // TODO: vbarredp, vbarred?
   // TODO: backslashedp. backslashed? (library functions)
 }
 
-InstallBuiltins_Predicates(globalEnv);
+installBuiltins_Predicates(globalEnv);

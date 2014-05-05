@@ -1,5 +1,9 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, vars:true */
+/*global Interpreter, Tokenizer, List*/
+
 //------------------------------------------------------------------------------
 function Environment(parentEnv) {
+  'use strict';
   this.variables = {};
   this.functions = {};
   this.parentEnv = parentEnv;
@@ -8,15 +12,16 @@ function Environment(parentEnv) {
 //------------------------------------------------------------------------------
 // we can look up functions and variables by name
 
-Environment.prototype.lookupFunction = function(name) {
+Environment.prototype.lookupFunction = function (name) {
+  'use strict';
   var f = this.functions[name.toLowerCase()];
-  if (f != undefined) {
+  if (f !== undefined) {
     return f;
   }
 
-  if (this.parentEnv != undefined) {
+  if (this.parentEnv !== undefined) {
     f = this.parentEnv.lookupFunction(name);
-    if (f != undefined) {
+    if (f !== undefined) {
       return f;
     }
   }
@@ -24,15 +29,16 @@ Environment.prototype.lookupFunction = function(name) {
   throw { message: "I don't know how to " + name };
 };
 
-Environment.prototype.lookupVariable = function(name) {
+Environment.prototype.lookupVariable = function (name) {
+  'use strict';
   var v = this.variables[name.toLowerCase()];
-  if (v != undefined && v.type != undefined) {
+  if (v !== undefined && v.type !== undefined) {
     return v;
   }
 
-  if (this.parentEnv != undefined) {
+  if (this.parentEnv !== undefined) {
     v = this.parentEnv.lookupVariable(name);
-    if (v != undefined && v.type != undefined) {
+    if (v !== undefined && v.type !== undefined) {
       return v;
     }
   }
@@ -43,29 +49,34 @@ Environment.prototype.lookupVariable = function(name) {
 //------------------------------------------------------------------------------
 // we can look up variables by name, just in the enclosing env
 
-Environment.prototype.lookupVariable1 = function(name) {
+Environment.prototype.lookupVariable1 = function (name) {
+  'use strict';
   return this.variables[name.toLowerCase()];
 };
 
 //------------------------------------------------------------------------------
 // we can bind functions and variables
 
-Environment.prototype.bindFunction = function(name, argspec, body, src) {
-  this.functions[name.toLowerCase()] = { 'name':name, 'argspec':argspec, 'body':body, src:src };
+Environment.prototype.bindFunction = function (name, argspec, body, src) {
+  'use strict';
+  this.functions[name.toLowerCase()] = { 'name': name, 'argspec': argspec,
+                                         'body': body, src: src };
 };
 
-Environment.prototype.bindVariable = function(name, value) {
+Environment.prototype.bindVariable = function (name, value) {
+  'use strict';
   this.variables[name.toLowerCase()] = value;
 };
 
 //------------------------------------------------------------------------------
 // assign a variable to the most local environment it's already declared in
 
-Environment.prototype.assignVariable = function(name, value) {
-  var env = this;
-  while (env != undefined) {
-    var v = this.variables[name.toLowerCase()];
-    if (v != undefined || env.parentEnv === undefined) {
+Environment.prototype.assignVariable = function (name, value) {
+  'use strict';
+  var v, env = this;
+  while (env !== undefined) {
+    v = this.variables[name.toLowerCase()];
+    if (v !== undefined || env.parentEnv === undefined) {
       env.variables[name.toLowerCase()] = value;
       break;
     }
@@ -76,44 +87,46 @@ Environment.prototype.assignVariable = function(name, value) {
 //------------------------------------------------------------------------------
 // we can bind functions and variables
 
-Environment.prototype.eraseFunction = function(name) {
+Environment.prototype.eraseFunction = function (name) {
+  'use strict';
   this.functions[name.toLowerCase()] = undefined;
 };
 
 //------------------------------------------------------------------------------
 // we can call functions
 
-Environment.prototype.callFunction = function(name, f, args) {
+Environment.prototype.callFunction = function (name, f, args) {
+  'use strict';
   var newEnv = new Environment(this);
-  var i = 0;
+  var i, j, input;
+  var terp = new Interpreter();
+  var getLexeme = function (x) { return x.lexeme; };
 
   // bind the required args
-  for (; i < f.argspec.requiredArgs.length; ++i) {
+  for (i = 0; i < f.argspec.requiredArgs.length; ++i) {
     newEnv.bindVariable(f.argspec.requiredArgs[i], args[i]);
   }
 
   // bind any optional args passed in
-  var j = 0;
-  for (; i < args.length && j < f.argspec.optionalArgs.length; ++i, ++j) {
+  for (j = 0; i < args.length && j < f.argspec.optionalArgs.length; ++i, ++j) {
     newEnv.bindVariable(f.argspec.optionalArgs[j].name, args[i]);
   }
 
   // evaluate defaults for remaining optionals and bind them in the new env
-  var terp = new Interpreter();
   terp.env = newEnv;
   terp.tokenizer = new Tokenizer();
-  for (; j < f.argspec.optionalArgs.length; ++j) {
-    if (f.argspec.optionalArgs[j].expr != undefined) {
+  while (j < f.argspec.optionalArgs.length) {
+    if (f.argspec.optionalArgs[j].expr !== undefined) {
       // re-tokenize the expression since it was in a list before
-      var input = f.argspec.optionalArgs[j].expr.map(
-        function(x) { return x.lexeme; }).join(' ');
+      input = f.argspec.optionalArgs[j].expr.map(getLexeme).join(' ');
       terp.tokenizer.tokenize(input);
       newEnv.bindVariable(f.argspec.optionalArgs[j].name, terp.toplevel());
     }
+    ++j;
   }
 
   // bind the rest of the arguments
-  if (f.argspec.restArg != undefined) {
+  if (f.argspec.restArg !== undefined) {
     newEnv.bindVariable(f.argspec.restArg, new List(args.slice(i)));
   }
 

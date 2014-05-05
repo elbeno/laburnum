@@ -1,7 +1,11 @@
+/*jslint browser:true, debug:true, devel:true, indent:2, plusplus:true, todo: true, vars:true */
+/*global Word, List, LArray, globalEnv*/
+
 //------------------------------------------------------------------------------
-function Reducer(env, f, init) {
+function reducer(env, f, init) {
+  'use strict';
   var args = env.lookupVariable1('rest').values;
-  if (args == undefined) {
+  if (args === undefined) {
     args = [];
   }
 
@@ -9,8 +13,9 @@ function Reducer(env, f, init) {
 }
 
 //------------------------------------------------------------------------------
-var BuildWord = function(env) {
-  return Reducer(env, function(a, b) {
+var buildWord = function (env) {
+  'use strict';
+  return reducer(env, function (a, b) {
     if (b.isList()) {
       throw { message: "word doesn't like " + b.toString() + ' as input' };
     }
@@ -19,24 +24,25 @@ var BuildWord = function(env) {
 };
 
 //------------------------------------------------------------------------------
-function BuildList(env) {
+function buildList(env) {
+  'use strict';
   var datums = [];
   var rest = env.lookupVariable1('rest');
-  rest.values.map(function(x) { datums.push(x); });
+  rest.values.map(function (x) { datums.push(x); });
 
   return new List(datums);
 }
 
 //------------------------------------------------------------------------------
-function Sentence(env) {
+function sentence(env) {
+  'use strict';
   var rest = env.lookupVariable1('rest');
   var datums = [];
 
-  rest.values.map(function(x) {
+  rest.values.map(function (x) {
     if (x.isList()) {
-      x.values.map(function(x) { datums.push(x); });
-    }
-    else {
+      x.values.map(function (x) { datums.push(x); });
+    } else {
       datums.push(x);
     }
   });
@@ -45,7 +51,8 @@ function Sentence(env) {
 }
 
 //------------------------------------------------------------------------------
-function FPut(env) {
+function fPut(env) {
+  'use strict';
   var car = env.lookupVariable1('car');
   var cdr = env.lookupVariable1('cdr');
 
@@ -62,7 +69,8 @@ function FPut(env) {
 }
 
 //------------------------------------------------------------------------------
-function LPut(env) {
+function lPut(env) {
+  'use strict';
   var car = env.lookupVariable1('car');
   var cdr = env.lookupVariable1('cdr');
 
@@ -79,45 +87,46 @@ function LPut(env) {
 }
 
 //------------------------------------------------------------------------------
-function MakeArray(env) {
+function makeArray(env) {
+  'use strict';
   var size = env.lookupVariable1('size');
   if (!size.isNumeric()) {
     throw { message: "array doesn't like " + size.toString() + ' as input' };
   }
 
   var origin = env.lookupVariable1('origin');
-  if (origin != undefined) {
+  if (origin !== undefined) {
     if (!origin.isNumeric()) {
       throw { message: "array doesn't like " + origin.toString() + ' as input' };
     }
     origin = origin.jvalue;
-  }
-  else {
+  } else {
     origin = 0;
   }
 
   var datums = [];
-  for (var i = 0; i < size.jvalue; ++i) {
+  var i;
+  for (i = 0; i < size.jvalue; ++i) {
     datums.push(new List([]));
   }
   return new LArray(datums, origin);
 }
 
 //------------------------------------------------------------------------------
-function ListToArray(env) {
+function listToArray(env) {
+  'use strict';
   var list = env.lookupVariable1('list');
   if (!list.isList()) {
     throw { message: "listtoarray doesn't like " + list.toString() + ' as input' };
   }
 
   var origin = env.lookupVariable1('origin');
-  if (origin != undefined) {
+  if (origin !== undefined) {
     if (!origin.isNumeric()) {
       throw { message: "listtoarray doesn't like " + origin.toString() + ' as input' };
     }
     origin = origin.jvalue;
-  }
-  else {
+  } else {
     origin = 0;
   }
 
@@ -125,7 +134,8 @@ function ListToArray(env) {
 }
 
 //------------------------------------------------------------------------------
-function ArrayToList(env) {
+function arrayToList(env) {
+  'use strict';
   var array = env.lookupVariable1('array');
   if (!array.isArray()) {
     throw { message: "arraytolist doesn't like " + array.toString() + ' as input' };
@@ -135,17 +145,19 @@ function ArrayToList(env) {
 }
 
 //------------------------------------------------------------------------------
-function Combine(env) {
+function combine(env) {
+  'use strict';
   var b = env.lookupVariable1('b');
 
   if (b.isList()) {
-    return FPut(env);
+    return fPut(env);
   }
-  return BuildWord(env);
+  return buildWord(env);
 }
 
 //------------------------------------------------------------------------------
-function Reverse(env) {
+function reverse(env) {
+  'use strict';
   var a = env.lookupVariable1('a');
 
   if (a.isList()) {
@@ -157,67 +169,70 @@ function Reverse(env) {
 //------------------------------------------------------------------------------
 var gensymIndex = 0;
 
-function Gensym(env) {
-  return new Word('g' + ++gensymIndex);
+function gensym() {
+  'use strict';
+  ++gensymIndex;
+  return new Word('g' + gensymIndex);
 }
 
 //------------------------------------------------------------------------------
-function InstallBuiltins_Constructors(env) {
+function installBuiltins_Constructors(env) {
+  'use strict';
 
   env.bindFunction('word',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   BuildWord, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 2, maxArgs: -1, minArgs: 1 },
+                   buildWord, '');
   env.bindFunction('list',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   BuildList, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 2, maxArgs: -1, minArgs: 1 },
+                   buildList, '');
   env.bindFunction('sentence',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   Sentence, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 2, maxArgs: -1, minArgs: 1 },
+                   sentence, '');
   env.bindFunction('se',
-                   { requiredArgs:[], optionalArgs:[], restArg:'rest',
-                     defaultArgs:2, maxArgs:-1, minArgs:1 },
-                   Sentence, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: 'rest',
+                     defaultArgs: 2, maxArgs: -1, minArgs: 1 },
+                   sentence, '');
   env.bindFunction('fput',
-                   { requiredArgs:['car', 'cdr'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   FPut, '');
+                   { requiredArgs: ['car', 'cdr'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   fPut, '');
   env.bindFunction('lput',
-                   { requiredArgs:['car', 'cdr'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   LPut, '');
+                   { requiredArgs: ['car', 'cdr'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   lPut, '');
   env.bindFunction('array',
-                   { requiredArgs:['size'], optionalArgs:[{name:'origin'}], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   MakeArray, '');
+                   { requiredArgs: ['size'], optionalArgs: [{name: 'origin'}], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   makeArray, '');
 
   // TODO: mdarray library function
 
   env.bindFunction('listtoarray',
-                   { requiredArgs:['list'], optionalArgs:[{name:'origin'}], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ListToArray, '');
+                   { requiredArgs: ['list'], optionalArgs: [{name: 'origin'}], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   listToArray, '');
   env.bindFunction('arraytolist',
-                   { requiredArgs:['array'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   ArrayToList, '');
+                   { requiredArgs: ['array'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   arrayToList, '');
 
   // TODO: the next 3 should be library functions
 
   env.bindFunction('combine',
-                   { requiredArgs:['a', 'b'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:2, maxArgs:2, minArgs:2 },
-                   Combine, '');
+                   { requiredArgs: ['a', 'b'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 2, maxArgs: 2, minArgs: 2 },
+                   combine, '');
   env.bindFunction('reverse',
-                   { requiredArgs:['a'], optionalArgs:[], restArg:undefined,
-                     defaultArgs:1, maxArgs:1, minArgs:1 },
-                   Reverse, '');
+                   { requiredArgs: ['a'], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 1, maxArgs: 1, minArgs: 1 },
+                   reverse, '');
   env.bindFunction('gensym',
-                   { requiredArgs:[], optionalArgs:[], restArg:undefined,
-                     defaultArgs:0, maxArgs:0, minArgs:0 },
-                   Gensym, '');
+                   { requiredArgs: [], optionalArgs: [], restArg: undefined,
+                     defaultArgs: 0, maxArgs: 0, minArgs: 0 },
+                   gensym, '');
 }
 
-InstallBuiltins_Constructors(globalEnv);
+installBuiltins_Constructors(globalEnv);
